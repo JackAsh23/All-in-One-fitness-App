@@ -9,10 +9,19 @@ type HeatmapProps = {
   onSelect?: (date: string) => void;
 };
 
+const WEEKDAYS = ["M", "", "W", "", "F", "", ""];
+
 export function Heatmap({ weeks, selected, onSelect }: HeatmapProps) {
   return (
     <div className="overflow-x-auto no-scrollbar">
       <div className="flex gap-[3px] min-w-max">
+        <div className="flex flex-col gap-[3px] pr-1">
+          {WEEKDAYS.map((label, index) => (
+            <span key={`${label}-${index}`} className="h-[11px] w-2 text-[8px] leading-[11px] text-fog">
+              {label}
+            </span>
+          ))}
+        </div>
         {weeks.map((week, i) => (
           <div key={i} className="flex flex-col gap-[3px]">
             {week.map((cell) => (

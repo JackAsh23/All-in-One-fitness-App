@@ -91,14 +91,19 @@ export function NutritionPage() {
             ) : (
               <ul className="space-y-2">
                 {items.map((food) => (
-                  <li key={food.id} className="flex items-start justify-between rounded-2xl bg-ink px-3 py-2">
-                    <div>
-                      <p>{food.name}</p>
+                  <li key={food.id} className="flex items-start justify-between gap-3 rounded-2xl bg-ink px-3 py-2">
+                    <div className="min-w-0">
+                      <p className="truncate">{food.name}</p>
                       <p className="text-xs text-fog">
                         {food.grams}g · P{Math.round(food.protein)} C{Math.round(food.carbs)} F{Math.round(food.fat)}
                       </p>
                     </div>
-                    <button type="button" className="text-xs text-fog" onClick={() => removeFood(food.id)}>
+                    <button
+                      type="button"
+                      className="shrink-0 text-xs text-fog underline-offset-2 hover:text-snow hover:underline"
+                      onClick={() => removeFood(food.id)}
+                      aria-label={`Remove ${food.name}`}
+                    >
                       {food.calories} kcal
                     </button>
                   </li>
