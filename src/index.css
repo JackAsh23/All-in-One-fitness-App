@@ -1,0 +1,77 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --color-ink: #07090c;
+  --color-ink-2: #0e1318;
+  --color-card: #141b22;
+  --color-card-2: #1b2430;
+  --color-line: #2a3542;
+  --color-fog: #8b98a5;
+  --color-snow: #f4f7fa;
+  --color-life: #3ee07f;
+  --color-life-dim: #1b7a45;
+  --color-run: #ff6b4a;
+  --color-lift: #7aa6ff;
+  --color-eat: #ffc857;
+  --color-step: #5eead4;
+  --color-heat-0: #161b22;
+  --color-heat-1: #0e4429;
+  --color-heat-2: #006d32;
+  --color-heat-3: #26a641;
+  --color-heat-4: #39d353;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+  background: #05070a;
+  color: var(--color-snow);
+  font-family: var(--font-sans);
+}
+
+body {
+  margin: 0;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+input,
+select,
+textarea {
+  color: var(--color-snow);
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-pop {
+  animation: pop-in 0.35s ease-out both;
+}

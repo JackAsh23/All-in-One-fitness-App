@@ -1,0 +1,100 @@
+export type MealType = "breakfast" | "lunch" | "snacks" | "dinner";
+
+export type Priorities = {
+  running: boolean;
+  strength: boolean;
+  nutrition: boolean;
+  steps: boolean;
+  mobility: boolean;
+};
+
+export type Profile = {
+  name: string;
+  calorieGoal: number;
+  proteinGoal: number;
+  carbGoal: number;
+  fatGoal: number;
+  stepGoal: number;
+  priorities: Priorities;
+};
+
+export type RunLog = {
+  id: string;
+  date: string;
+  time: string;
+  distanceKm: number;
+  durationSec: number;
+  calories: number;
+  notes?: string;
+};
+
+export type WorkoutSet = {
+  reps: number;
+  kg: number;
+};
+
+export type WorkoutExercise = {
+  name: string;
+  sets: WorkoutSet[];
+};
+
+export type WorkoutLog = {
+  id: string;
+  date: string;
+  time: string;
+  template: string;
+  durationMin: number;
+  exercises: WorkoutExercise[];
+};
+
+export type FoodLog = {
+  id: string;
+  date: string;
+  time: string;
+  meal: MealType;
+  name: string;
+  grams: number;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+};
+
+export type StepLog = {
+  date: string;
+  steps: number;
+};
+
+export type AppState = {
+  profile: Profile;
+  runs: RunLog[];
+  workouts: WorkoutLog[];
+  foods: FoodLog[];
+  steps: StepLog[];
+};
+
+export type DayParts = {
+  movement: number;
+  training: number;
+  nutrition: number;
+  activity: number;
+};
+
+export type DaySummary = {
+  date: string;
+  runKm: number;
+  runDurationSec: number;
+  workoutCount: number;
+  workoutSets: number;
+  workoutMinutes: number;
+  workoutName?: string;
+  mealsLogged: number;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  steps: number;
+  score: number;
+  parts: DayParts;
+  max: number;
+};
