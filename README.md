@@ -33,10 +33,9 @@ Open [http://localhost:5173](http://localhost:5173). The first load seeds ~17 we
 ### v0.4 — Smart nutrition
 - Barcode scan, recent/favorites, saved meals, portion steppers
 
-### v0.5 — Advanced analytics
-- **Stats tab** — Run / Lift / Eat insights
-- **Running** — weekly mileage, pace trend, training load, PRs, race predictions
-- **Strength** — weekly volume, exercise PRs, muscle group frequency, progression charts
-- **Nutrition** — calorie & protein averages, macro adherence, weight trend
+### v1.0 — Consistency OS
+- **Goal modes** — Balanced, Marathon block, Strength focus, Cut phase
+- **Consistency OS hub** — dynamic score pillars, streak labels, monthly recaps
+- **One Life Wrapped** — Spotify-style yearly recap at `/wrapped`
 
 Data never leaves the browser. No accounts yet.

@@ -7,7 +7,7 @@ const TABS = [
   { to: "/workout", label: "Lift", icon: Dumbbell },
   { to: "/nutrition", label: "Eat", icon: Salad },
   { to: "/analytics", label: "Stats", icon: BarChart3 },
-  { to: "/consistency", label: "Heat", icon: Flame },
+  { to: "/consistency", label: "OS", icon: Flame },
 ];
 
 export function AppShell() {

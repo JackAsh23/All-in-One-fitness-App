@@ -1,13 +1,16 @@
 import { useSyncExternalStore } from "react";
 import { createDemoState } from "./demo";
 import { defaultIntegrations } from "./integrations";
+import { defaultPriorities } from "./scoring";
 import { getFoodById } from "./nutrition";
 import { runSync } from "./sync";
 import { macrosForGrams } from "./foods";
 import { nowTime, todayISO, uid } from "./dates";
+import { goalModeMeta } from "./goalModes";
 import type {
   AppState,
   FoodLog,
+  GoalMode,
   IntegrationId,
   MealType,
   Profile,
@@ -16,7 +19,7 @@ import type {
   WorkoutLog,
 } from "./types";
 
-const KEY = "one-life-fitness-v4";
+const KEY = "one-life-fitness-v5";
 
 let state: AppState = load();
 const listeners = new Set<() => void>();
@@ -25,8 +28,14 @@ let autoSyncTimer: number | undefined;
 function migrate(raw: Record<string, unknown>): AppState | null {
   if (!raw?.profile || !Array.isArray(raw.runs)) return null;
   const base = raw as unknown as AppState;
+  const profile = base.profile as Profile;
   return {
     ...base,
+    profile: {
+      ...profile,
+      goalMode: profile.goalMode ?? "balanced",
+      priorities: profile.priorities ?? defaultPriorities(),
+    },
     integrations: Array.isArray(base.integrations) ? base.integrations : defaultIntegrations(),
     autoSync: typeof base.autoSync === "boolean" ? base.autoSync : true,
     syncLog: Array.isArray(base.syncLog) ? base.syncLog : [],
@@ -38,7 +47,7 @@ function migrate(raw: Record<string, unknown>): AppState | null {
 }
 
 function load(): AppState {
-  for (const key of [KEY, "one-life-fitness-v3", "one-life-fitness-v2", "one-life-fitness-v1"]) {
+  for (const key of [KEY, "one-life-fitness-v4", "one-life-fitness-v3", "one-life-fitness-v2", "one-life-fitness-v1"]) {
     try {
       const raw = localStorage.getItem(key);
       if (!raw) continue;
@@ -102,6 +111,11 @@ export function initStore() {
 
 export function resetDemo() {
   emit(createDemoState());
+}
+
+export function setGoalMode(mode: GoalMode) {
+  const meta = goalModeMeta(mode);
+  updateProfile({ goalMode: mode, priorities: meta.priorities });
 }
 
 export function updateProfile(patch: Partial<Profile>) {

@@ -27,6 +27,8 @@ export type Priorities = {
   mobility: boolean;
 };
 
+export type GoalMode = "balanced" | "marathon" | "strength" | "cut";
+
 export type Profile = {
   name: string;
   calorieGoal: number;
@@ -34,6 +36,7 @@ export type Profile = {
   carbGoal: number;
   fatGoal: number;
   stepGoal: number;
+  goalMode: GoalMode;
   priorities: Priorities;
 };
 
@@ -132,6 +135,8 @@ export type DayParts = {
   activity: number;
 };
 
+export type DayPartsMax = DayParts;
+
 export type DaySummary = {
   date: string;
   runKm: number;
@@ -148,5 +153,6 @@ export type DaySummary = {
   steps: number;
   score: number;
   parts: DayParts;
+  partsMax: DayPartsMax;
   max: number;
 };

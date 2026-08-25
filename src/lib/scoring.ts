@@ -8,6 +8,16 @@ const WEIGHTS = {
   mobility: 0,
 } as const;
 
+export function priorityWeights(profile: Profile) {
+  const p = profile.priorities;
+  return {
+    movement: p.running ? WEIGHTS.running : 0,
+    training: p.strength ? WEIGHTS.strength : 0,
+    nutrition: p.nutrition ? WEIGHTS.nutrition : 0,
+    activity: p.steps ? WEIGHTS.steps : 0,
+  };
+}
+
 function clamp(n: number, min = 0, max = 1) {
   return Math.min(max, Math.max(min, n));
 }
@@ -35,7 +45,7 @@ export function summarizeDay(state: AppState, date: string): DaySummary {
     { calories: 0, protein: 0, carbs: 0, fat: 0 },
   );
 
-  const { score, parts, max } = scoreParts(
+  const { score, parts, partsMax, max } = scoreParts(
     {
       runKm,
       workoutCount: workouts.length,
@@ -61,6 +71,7 @@ export function summarizeDay(state: AppState, date: string): DaySummary {
     steps,
     score,
     parts,
+    partsMax,
     max,
   };
 }
@@ -96,6 +107,12 @@ export function scoreParts(
   }
 
   const score = max === 0 ? 0 : Math.round((earned / max) * 100);
+  const partsMax = {
+    movement: enabled.running ? WEIGHTS.running : 0,
+    training: enabled.strength ? WEIGHTS.strength : 0,
+    nutrition: enabled.nutrition ? WEIGHTS.nutrition : 0,
+    activity: enabled.steps ? WEIGHTS.steps : 0,
+  };
   return {
     score,
     max,
@@ -105,6 +122,7 @@ export function scoreParts(
       nutrition: Math.round(nutrition * WEIGHTS.nutrition),
       activity: Math.round(activity * WEIGHTS.steps),
     },
+    partsMax,
   };
 }
 

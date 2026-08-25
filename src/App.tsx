@@ -8,10 +8,12 @@ import { IntegrationsPage } from "./pages/Integrations";
 import { ProfilePage } from "./pages/Profile";
 import { RunPage } from "./pages/Run";
 import { WorkoutPage } from "./pages/Workout";
+import { WrappedPage } from "./pages/Wrapped";
 
 export default function App() {
   return (
     <Routes>
+      <Route path="wrapped" element={<WrappedPage />} />
       <Route element={<AppShell />}>
         <Route index element={<HomePage />} />
         <Route path="run" element={<RunPage />} />

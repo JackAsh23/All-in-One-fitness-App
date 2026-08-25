@@ -200,6 +200,7 @@ export function createDemoState(today = todayISO()): AppState {
       carbGoal: 220,
       fatGoal: 60,
       stepGoal: 10000,
+      goalMode: "balanced",
       priorities: defaultPriorities(),
     },
     runs,

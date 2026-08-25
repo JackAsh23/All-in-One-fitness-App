@@ -1,19 +1,26 @@
 import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import { Sparkles } from "lucide-react";
 import { buildWeeks, Card, HeatLegend, Heatmap } from "../components/Heatmap";
-import { addDays, daysInRange, formatLongDate, formatMonthYear, todayISO } from "../lib/dates";
+import { addDays, daysInRange, formatLongDate, todayISO } from "../lib/dates";
+import { buildYearWrapped, recentMonthRecaps, scoreGrade, streakLabel } from "../lib/consistency";
+import { GOAL_MODES } from "../lib/goalModes";
 import {
+  currentStreak,
   heatLevelFromScore,
   mealHeatLevel,
   runHeatLevel,
   summarizeDay,
   workoutHeatLevel,
 } from "../lib/scoring";
-import { useAppState } from "../lib/store";
+import { setGoalMode, useAppState } from "../lib/store";
 
 export function ConsistencyPage() {
   const state = useAppState();
   const today = todayISO();
   const [selected, setSelected] = useState(today);
+  const wrapped = buildYearWrapped(state);
+  const monthRecaps = recentMonthRecaps(state, 3);
 
   const range = daysInRange(addDays(today, -119), today);
   const cells = useMemo(
@@ -27,7 +34,6 @@ export function ConsistencyPage() {
           run: runHeatLevel(day.runKm),
           workout: workoutHeatLevel(day.workoutCount),
           meal: mealHeatLevel(day.mealsLogged),
-          steps: heatLevelFromScore(Math.round((day.steps / state.profile.stepGoal) * 100)),
           summary: day,
         };
       }),
@@ -39,63 +45,120 @@ export function ConsistencyPage() {
   const liftWeeks = buildWeeks(cells.map((cell) => ({ date: cell.date, level: cell.workout })));
   const mealWeeks = buildWeeks(cells.map((cell) => ({ date: cell.date, level: cell.meal })));
 
-  const month = today.slice(0, 7);
-  const monthCells = cells.filter((cell) => cell.date.startsWith(month));
-  const monthKm = monthCells.reduce((sum, cell) => sum + cell.summary.runKm, 0);
-  const monthWorkouts = monthCells.reduce((sum, cell) => sum + cell.summary.workoutCount, 0);
-  const monthLogged = monthCells.filter((cell) => cell.summary.mealsLogged > 0).length;
-  const monthSteps =
-    monthCells.reduce((sum, cell) => sum + cell.summary.steps, 0) / Math.max(monthCells.length, 1);
-  const monthScore = Math.round(monthCells.reduce((sum, cell) => sum + cell.score, 0) / Math.max(monthCells.length, 1));
-
+  const streak = currentStreak(today, (date) => summarizeDay(state, date).score >= 50);
   const selectedDay = summarizeDay(state, selected);
-  const checks = [
-    { label: "Run", ok: selectedDay.runKm > 0 },
-    { label: "Step goal", ok: selectedDay.steps >= state.profile.stepGoal },
-    { label: "Workout", ok: selectedDay.workoutCount > 0 },
-    { label: "Meals", ok: selectedDay.mealsLogged >= 3 },
-  ];
+  const activeMode = GOAL_MODES.find((m) => m.id === state.profile.goalMode) ?? GOAL_MODES[0];
+
+  const pillars = [
+    { key: "movement", label: "Movement", emoji: "🏃", value: selectedDay.parts.movement, max: selectedDay.partsMax.movement, enabled: state.profile.priorities.running },
+    { key: "training", label: "Training", emoji: "💪", value: selectedDay.parts.training, max: selectedDay.partsMax.training, enabled: state.profile.priorities.strength },
+    { key: "nutrition", label: "Nutrition", emoji: "🍱", value: selectedDay.parts.nutrition, max: selectedDay.partsMax.nutrition, enabled: state.profile.priorities.nutrition },
+    { key: "activity", label: "Daily activity", emoji: "👟", value: selectedDay.parts.activity, max: selectedDay.partsMax.activity, enabled: state.profile.priorities.steps },
+  ].filter((p) => p.enabled && p.max > 0);
 
   return (
     <div className="space-y-4 animate-pop">
-      <h2 className="text-2xl font-semibold">Consistency</h2>
-      <Card>
-        <p className="text-xs uppercase tracking-[0.18em] text-life">This month</p>
-        <p className="mt-1 text-lg font-semibold">{formatMonthYear(today)}</p>
-        <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
-          <p>🏃 {monthKm.toFixed(0)} km</p>
-          <p>💪 {monthWorkouts} workouts</p>
-          <p>🍱 {monthLogged} days logged</p>
-          <p>👟 {Math.round(monthSteps).toLocaleString()} avg steps</p>
+      <div className="flex items-end justify-between">
+        <div>
+          <p className="text-xs uppercase tracking-[0.18em] text-life">Phase 6</p>
+          <h2 className="text-2xl font-semibold">Consistency OS</h2>
         </div>
-        <p className="mt-3 font-mono text-life">Consistency {monthScore}%</p>
+        <Link to="/wrapped" className="flex items-center gap-1 text-sm text-life">
+          <Sparkles size={14} />
+          Wrapped
+        </Link>
+      </div>
+
+      <Card className="border-life/30 bg-gradient-to-br from-life/10 to-card">
+        <p className="text-xs uppercase tracking-[0.18em] text-fog">Today&apos;s score</p>
+        <div className="mt-1 flex items-end justify-between">
+          <p className="font-mono text-5xl font-semibold text-life">{selectedDay.score}</p>
+          <div className="text-right">
+            <p className="text-sm font-medium">{scoreGrade(selectedDay.score)}</p>
+            <p className="text-xs text-fog">
+              {streak} day streak · {streakLabel(streak)}
+            </p>
+          </div>
+        </div>
+        <ul className="mt-4 space-y-2">
+          {pillars.map((pillar) => (
+            <li key={pillar.key}>
+              <div className="mb-1 flex justify-between text-sm">
+                <span>
+                  {pillar.emoji} {pillar.label}
+                </span>
+                <span className="font-mono text-fog">
+                  {pillar.value}/{pillar.max}
+                </span>
+              </div>
+              <div className="h-2 overflow-hidden rounded-full bg-ink">
+                <div
+                  className="h-full rounded-full bg-life"
+                  style={{ width: `${pillar.max ? (pillar.value / pillar.max) * 100 : 0}%` }}
+                />
+              </div>
+            </li>
+          ))}
+        </ul>
       </Card>
+
+      <Card>
+        <h3 className="mb-2 font-semibold">Goal mode</h3>
+        <p className="mb-3 text-xs text-fog">{activeMode.emoji} {activeMode.blurb}</p>
+        <div className="flex gap-2 overflow-x-auto no-scrollbar">
+          {GOAL_MODES.map((mode) => (
+            <button
+              key={mode.id}
+              type="button"
+              onClick={() => setGoalMode(mode.id)}
+              className={`shrink-0 rounded-full px-3 py-1.5 text-sm ${
+                state.profile.goalMode === mode.id ? "bg-life text-ink" : "bg-ink text-fog"
+              }`}
+            >
+              {mode.emoji} {mode.label}
+            </button>
+          ))}
+        </div>
+      </Card>
+
+      <Link
+        to="/wrapped"
+        className="block rounded-3xl border border-life/40 bg-gradient-to-r from-life/20 to-run/10 px-4 py-4"
+      >
+        <p className="text-xs uppercase tracking-[0.18em] text-life">{wrapped.year} Wrapped</p>
+        <p className="mt-1 font-semibold">
+          {wrapped.totalKm} km · {wrapped.totalWorkouts} workouts · {wrapped.avgScore}% consistency
+        </p>
+        <p className="mt-1 text-sm text-fog">Strongest month: {wrapped.bestMonth}</p>
+      </Link>
+
+      {monthRecaps.map((recap) => (
+        <Card key={recap.month}>
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold">{recap.label}</h3>
+            <span className="font-mono text-life">{recap.score}%</span>
+          </div>
+          <p className="mt-2 text-sm text-fog">
+            {recap.km} km · {recap.workouts} workouts · {recap.loggedDays} days logged
+          </p>
+        </Card>
+      ))}
 
       <Card>
         <h3 className="mb-3 font-semibold">Unified heatmap</h3>
         <Heatmap weeks={unified} selected={selected} onSelect={setSelected} />
-        <HeatLegend label="GitHub-style body graph" />
+        <HeatLegend label="Your body&apos;s GitHub graph" />
       </Card>
 
       <Card>
         <h3 className="mb-2 font-semibold">{formatLongDate(selected)}</h3>
         <p className="mb-3 font-mono text-3xl text-life">{selectedDay.score}%</p>
-        <ul className="space-y-2 text-sm">
-          {checks.map((item) => (
-            <li key={item.label} className="flex justify-between rounded-2xl bg-ink px-3 py-2">
-              <span>{item.label}</span>
-              <span className={item.ok ? "text-life" : "text-fog"}>{item.ok ? "✓" : "—"}</span>
-            </li>
-          ))}
-        </ul>
         {selectedDay.workoutName ? (
-          <p className="mt-3 text-sm text-fog">
-            {selectedDay.workoutName} · {selectedDay.workoutSets} sets · {selectedDay.workoutMinutes} min
+          <p className="text-sm text-fog">
+            {selectedDay.workoutName} · {selectedDay.workoutSets} sets
           </p>
         ) : null}
-        {selectedDay.runKm ? (
-          <p className="mt-1 text-sm text-fog">{selectedDay.runKm.toFixed(1)} km run</p>
-        ) : null}
+        {selectedDay.runKm ? <p className="text-sm text-fog">{selectedDay.runKm.toFixed(1)} km run</p> : null}
       </Card>
 
       <Card>
@@ -111,7 +174,7 @@ export function ConsistencyPage() {
       <Card>
         <h3 className="mb-3 font-semibold">Meal logging</h3>
         <Heatmap weeks={mealWeeks} selected={selected} onSelect={setSelected} />
-        <HeatLegend label="Did you log — not guilt" />
+        <HeatLegend label="Logged — not guilt" />
       </Card>
     </div>
   );

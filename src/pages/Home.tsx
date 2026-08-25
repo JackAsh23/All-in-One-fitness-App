@@ -67,11 +67,22 @@ export function HomePage() {
           </div>
         </div>
         <div className="grid grid-cols-2 gap-2 text-sm">
-          <ScoreChip label="Movement" value={day.parts.movement} max={30} color="text-run" />
-          <ScoreChip label="Training" value={day.parts.training} max={25} color="text-lift" />
-          <ScoreChip label="Nutrition" value={day.parts.nutrition} max={25} color="text-eat" />
-          <ScoreChip label="Activity" value={day.parts.activity} max={20} color="text-step" />
+          {day.partsMax.movement > 0 ? (
+            <ScoreChip label="Movement" value={day.parts.movement} max={day.partsMax.movement} color="text-run" />
+          ) : null}
+          {day.partsMax.training > 0 ? (
+            <ScoreChip label="Training" value={day.parts.training} max={day.partsMax.training} color="text-lift" />
+          ) : null}
+          {day.partsMax.nutrition > 0 ? (
+            <ScoreChip label="Nutrition" value={day.parts.nutrition} max={day.partsMax.nutrition} color="text-eat" />
+          ) : null}
+          {day.partsMax.activity > 0 ? (
+            <ScoreChip label="Activity" value={day.parts.activity} max={day.partsMax.activity} color="text-step" />
+          ) : null}
         </div>
+        <Link to="/consistency" className="mt-3 inline-block text-xs text-life">
+          Consistency OS · {streak} day streak →
+        </Link>
       </Card>
 
       <div className="grid grid-cols-2 gap-3">

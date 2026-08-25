@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Card } from "../components/Heatmap";
+import { GOAL_MODES } from "../lib/goalModes";
 import { defaultPriorities } from "../lib/scoring";
-import { resetDemo, updateProfile, useAppState } from "../lib/store";
+import { resetDemo, setGoalMode, updateProfile, useAppState } from "../lib/store";
 import type { Priorities } from "../lib/types";
 
 export function ProfilePage() {
@@ -63,7 +64,30 @@ export function ProfilePage() {
         </div>
       </Card>
       <Card>
-        <h3 className="mb-3 font-semibold">Score priorities</h3>
+        <h3 className="mb-3 font-semibold">Consistency OS mode</h3>
+        <div className="space-y-2">
+          {GOAL_MODES.map((mode) => (
+            <button
+              key={mode.id}
+              type="button"
+              onClick={() => {
+                setGoalMode(mode.id);
+                setPriorities(mode.priorities);
+              }}
+              className={`w-full rounded-2xl px-3 py-3 text-left ${
+                state.profile.goalMode === mode.id ? "bg-life/15 ring-1 ring-life" : "bg-ink"
+              }`}
+            >
+              <p className="font-medium">
+                {mode.emoji} {mode.label}
+              </p>
+              <p className="text-xs text-fog">{mode.blurb}</p>
+            </button>
+          ))}
+        </div>
+      </Card>
+      <Card>
+        <h3 className="mb-3 font-semibold">Score pillars (manual)</h3>
         {(
           [
             ["running", "Running"],
@@ -102,7 +126,7 @@ export function ProfilePage() {
         Reload demo year
       </button>
       <p className="px-1 text-center text-xs text-fog">
-        One Life v0.5 — tracker, heatmaps, sync, nutrition, analytics. Data stays in this browser.
+        One Life v1.0 — Consistency OS. Data stays in this browser.
       </p>
     </div>
   );
