@@ -65,6 +65,14 @@ Data never leaves the browser. No accounts yet.
 
 See [ROADMAP.md](ROADMAP.md) for v2 direction (Capacitor, real device APIs, cloud sync).
 
+### Install on your phone (PWA)
+
+1. Open **https://jackash23.github.io/All-in-One-fitness-App/** in Safari (iPhone) or Chrome (Android)
+2. **Add to Home Screen** — the app runs standalone with offline shell caching
+3. After updates deploy, reopen the app once to pick up the latest service worker
+
+Icons and offline cache work on the GitHub Pages build (`npm run build:pages`).
+
 ## Deploy
 
 GitHub Pages builds on every push to `main`.

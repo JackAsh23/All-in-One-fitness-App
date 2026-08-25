@@ -1,57 +1,29 @@
 import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
+import { VitePWA } from "vite-plugin-pwa";
 import { createReadStream, cpSync, existsSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath, URL } from "node:url";
 
 const workoutAssets = fileURLToPath(new URL("./node_modules/@bryllim/workout-guide/assets", import.meta.url));
+const isGithubPages = process.env.GITHUB_PAGES === "true";
 const GITHUB_PAGES_BASE = "/All-in-One-fitness-App/";
 const GITHUB_PAGES_ORIGIN = "https://jackash23.github.io";
+const pagesStartUrl = `${GITHUB_PAGES_ORIGIN}${GITHUB_PAGES_BASE}`;
 
-function githubPagesPwa(): Plugin {
+function githubPagesSpaFallback(): Plugin {
   return {
-    name: "github-pages-pwa",
+    name: "github-pages-spa-fallback",
     transformIndexHtml(html) {
-      if (process.env.GITHUB_PAGES !== "true") return html;
-      return html.replace(
-        "<head>",
-        `<head>\n    <base href="${GITHUB_PAGES_BASE}" />`,
-      ).replace(
-        "</head>",
-        `    <link rel="manifest" href="${GITHUB_PAGES_BASE}manifest.webmanifest" />\n</head>`,
-      );
+      if (!isGithubPages) return html;
+      return html.replace("<head>", `<head>\n    <base href="${GITHUB_PAGES_BASE}" />`);
     },
     closeBundle() {
-      if (process.env.GITHUB_PAGES !== "true") return;
-
+      if (!isGithubPages) return;
       const distDir = path.resolve("dist");
-      const indexPath = path.join(distDir, "index.html");
-      const indexHtml = readFileSync(indexPath, "utf-8");
-
-      // GitHub Pages serves 404.html for unknown paths — required for SPA deep links & iOS home screen.
+      const indexHtml = readFileSync(path.join(distDir, "index.html"), "utf-8");
       writeFileSync(path.join(distDir, "404.html"), indexHtml);
-
-      const startUrl = `${GITHUB_PAGES_ORIGIN}${GITHUB_PAGES_BASE}`;
-      const manifest = {
-        name: "One Life — Fitness OS",
-        short_name: "One Life",
-        id: startUrl,
-        start_url: startUrl,
-        scope: startUrl,
-        display: "standalone",
-        theme_color: "#07090c",
-        background_color: "#07090c",
-        icons: [
-          {
-            src: `${GITHUB_PAGES_BASE}favicon.svg`,
-            sizes: "any",
-            type: "image/svg+xml",
-            purpose: "any",
-          },
-        ],
-      };
-      writeFileSync(path.join(distDir, "manifest.webmanifest"), JSON.stringify(manifest, null, 2));
     },
   };
 }
@@ -82,8 +54,43 @@ function workoutGuideAssets(): Plugin {
 }
 
 export default defineConfig({
-  base: process.env.GITHUB_PAGES === "true" ? "/All-in-One-fitness-App/" : "/",
-  plugins: [react(), tailwindcss(), workoutGuideAssets(), githubPagesPwa()],
+  base: isGithubPages ? GITHUB_PAGES_BASE : "/",
+  plugins: [
+    react(),
+    tailwindcss(),
+    workoutGuideAssets(),
+    VitePWA({
+      registerType: "autoUpdate",
+      injectRegister: "auto",
+      includeAssets: ["favicon.svg", "apple-touch-icon.png", "pwa-192.png", "pwa-512.png"],
+      manifest: {
+        name: "One Life — Fitness OS",
+        short_name: "One Life",
+        description: "Move. Train. Eat. See your consistency.",
+        theme_color: "#07090c",
+        background_color: "#07090c",
+        display: "standalone",
+        orientation: "portrait",
+        ...(isGithubPages
+          ? { id: pagesStartUrl, start_url: pagesStartUrl, scope: pagesStartUrl }
+          : { start_url: "/", scope: "/" }),
+        icons: [
+          { src: "pwa-192.png", sizes: "192x192", type: "image/png" },
+          { src: "pwa-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
+          { src: "pwa-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+          { src: "favicon.svg", sizes: "any", type: "image/svg+xml", purpose: "any" },
+        ],
+      },
+      workbox: {
+        navigateFallback: isGithubPages ? `${GITHUB_PAGES_BASE}index.html` : "/index.html",
+        navigateFallbackDenylist: [/^\/wg\//, /^\/All-in-One-fitness-App\/wg\//],
+        globPatterns: ["**/*.{js,css,html,ico,png,svg,webmanifest,woff2}"],
+        globIgnores: ["**/wg/**"],
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+      },
+    }),
+    githubPagesSpaFallback(),
+  ],
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),

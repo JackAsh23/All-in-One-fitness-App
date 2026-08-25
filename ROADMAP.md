@@ -10,7 +10,7 @@ Secondary tracks (later):
 
 | Track | When | Why |
 |-------|------|-----|
-| **PWA** | After Capacitor or in parallel | “Add to Home Screen”, offline shell, install prompt for users who skip the app store |
+| **PWA** | In progress on web | “Add to Home Screen”, offline shell, PNG icons — works on GitHub Pages today |
 | **Backend + accounts** | When multi-device sync is needed | Move `AppState` off pure `localStorage`; keep demo mode for guests |
 
 Recommended order: **Capacitor → real integrations → optional cloud sync → optional PWA polish**.
