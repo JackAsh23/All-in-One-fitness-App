@@ -14,7 +14,7 @@ const TABS = [
 const NESTED: Record<string, { parent: string; title: string }> = {
   "/profile": { parent: "/", title: "Profile" },
   "/integrations": { parent: "/profile", title: "Integrations" },
-  "/workout/gallery": { parent: "/workout", title: "Gallery" },
+  "/workout/gallery": { parent: "/workout", title: "Exercise Gallery" },
 };
 
 export function AppShell() {

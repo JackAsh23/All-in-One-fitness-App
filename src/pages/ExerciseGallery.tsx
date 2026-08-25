@@ -4,10 +4,8 @@ import { ExerciseArt } from "../components/ExerciseArt";
 import { Sheet } from "../components/Sheet";
 import {
   GUIDE_EQUIPMENT,
-  GUIDE_EXERCISES,
   GUIDE_MUSCLES,
   searchGuideExercises,
-  slugImageUrl,
   type GuideExercise,
 } from "../lib/exerciseArt";
 
@@ -27,14 +25,7 @@ export function ExerciseGalleryPage() {
 
   return (
     <div className="w-full min-w-0 space-y-4 animate-pop">
-      <div>
-        <p className="text-xs uppercase tracking-[0.18em] text-lift">Workout Guide</p>
-        <h2 className="text-2xl font-semibold">Exercise gallery</h2>
-      </div>
-      <p className="text-sm text-fog">
-        {GUIDE_EXERCISES.length} exercises from @bryllim/workout-guide — 3 PNG frames each. Tap a card to preview,
-        then start a set.
-      </p>
+      <h2 className="text-2xl font-semibold">Exercise Gallery</h2>
 
       <input
         value={query}
@@ -97,19 +88,11 @@ export function ExerciseGalleryPage() {
       <Sheet open={Boolean(selected)} title={selected?.name ?? "Exercise"} onClose={() => setSelected(null)}>
         {selected ? (
           <div className="space-y-4">
-            <div className="grid grid-cols-3 gap-2">
-              {([1, 2, 3] as const).map((frame) => (
-                <img
-                  key={frame}
-                  src={slugImageUrl(selected.slug, frame)}
-                  alt={`${selected.name} frame ${frame}`}
-                  className="aspect-square w-full rounded-2xl bg-[#0b0f14] object-contain"
-                />
-              ))}
+            <div className="flex justify-center">
+              <ExerciseArt name={selected.name} slug={selected.slug} size={240} animate />
             </div>
-            <ExerciseArt name={selected.name} slug={selected.slug} size={220} animate fill className="mx-auto max-w-[220px]" />
-            <p className="text-sm text-fog">
-              {selected.muscle} · {selected.equipment} · 3 frames
+            <p className="text-center text-sm text-fog">
+              {selected.muscle} · {selected.equipment}
             </p>
             <button
               type="button"

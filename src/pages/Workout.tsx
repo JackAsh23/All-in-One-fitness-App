@@ -285,9 +285,7 @@ export function WorkoutPage() {
         to="/workout/gallery"
         className="block rounded-3xl border border-lift/40 bg-lift/10 px-4 py-4"
       >
-        <p className="text-xs uppercase tracking-[0.18em] text-lift">@bryllim/workout-guide</p>
-        <p className="mt-1 font-semibold">Exercise gallery · 302 PNG guides</p>
-        <p className="mt-1 text-sm text-fog">Filter by muscle and equipment, preview 3 frames, start a set.</p>
+        <p className="font-semibold">Exercise Gallery</p>
       </Link>
 
       <Card>
