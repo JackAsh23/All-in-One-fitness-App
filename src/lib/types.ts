@@ -137,6 +137,15 @@ export type WeightLog = {
   kg: number;
 };
 
+export type StravaAuth = {
+  athleteId: number;
+  athleteName?: string;
+  accessToken: string;
+  refreshToken: string;
+  /** Unix seconds */
+  expiresAt: number;
+};
+
 export type AppState = {
   profile: Profile;
   runs: RunLog[];
@@ -151,6 +160,7 @@ export type AppState = {
   recentFoods: RecentFood[];
   savedMeals: SavedMeal[];
   savedRoutes: RoutePlan[];
+  strava?: StravaAuth;
 };
 
 export type DayParts = {

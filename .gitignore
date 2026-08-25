@@ -5,3 +5,15 @@ dist-ssr
 .DS_Store
 .vite
 preview-serve.json
+
+# Capacitor / native tooling
+android/.gradle
+android/app/build
+android/build
+android/.idea
+android/local.properties
+ios/App/Pods
+ios/App/build
+ios/DerivedData
+ios/capacitor-cordova-ios-plugins
+.capacitor

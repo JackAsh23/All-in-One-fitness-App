@@ -32,6 +32,7 @@ function simulatedSteps(state: AppState, date: string, sources: IntegrationId[])
 }
 
 function stravaCandidates(state: AppState): RunLog[] {
+  if (state.strava) return [];
   if (!isConnected(state, "strava")) return [];
   const today = todayISO();
   const candidates: RunLog[] = [

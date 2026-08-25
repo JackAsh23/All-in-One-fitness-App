@@ -4,6 +4,8 @@ import { defaultIntegrations } from "./integrations";
 import { defaultPriorities } from "./scoring";
 import { getFoodById } from "./nutrition";
 import { runSync } from "./sync";
+import { fetchStravaRuns } from "./strava/activities";
+import { tokenToStravaAuth, exchangeStravaCode } from "./strava/config";
 import { macrosForGrams } from "./foods";
 import { nowTime, todayISO, uid } from "./dates";
 import { goalModeMeta } from "./goalModes";
@@ -17,7 +19,9 @@ import type {
   RoutePlan,
   RunLog,
   SavedMeal,
+  SyncEvent,
   WorkoutLog,
+  StravaAuth,
 } from "./types";
 
 const KEY = "one-life-fitness-v6";
@@ -50,6 +54,7 @@ function migrate(raw: Record<string, unknown>): AppState | null {
     savedMeals: Array.isArray(base.savedMeals) ? base.savedMeals : [],
     savedRoutes: Array.isArray(base.savedRoutes) ? base.savedRoutes : [],
     weightLogs: Array.isArray(base.weightLogs) ? base.weightLogs : [],
+    strava: base.strava as StravaAuth | undefined,
   };
 }
 
@@ -309,6 +314,11 @@ export function bumpSteps(date: string, amount: number) {
 }
 
 export function setIntegrationConnected(id: IntegrationId, connected: boolean) {
+  if (id === "strava" && !connected) {
+    disconnectStrava();
+    return;
+  }
+
   const now = new Date().toISOString();
   emit({
     ...state,
@@ -335,15 +345,99 @@ export function setIntegrationConnected(id: IntegrationId, connected: boolean) {
         ].slice(0, 40)
       : state.syncLog,
   });
-  if (connected) syncNow(false);
+  if (connected) void syncNow(false);
+}
+
+export async function completeStravaOAuth(code: string) {
+  const payload = await exchangeStravaCode(code);
+  const auth = tokenToStravaAuth(payload);
+  const now = new Date().toISOString();
+  const connectedEvent: SyncEvent = {
+    id: uid("sync"),
+    at: now,
+    source: "strava",
+    kind: "info",
+    message: `Connected Strava as ${auth.athleteName ?? "athlete"}.`,
+  };
+  emit({
+    ...state,
+    strava: auth,
+    integrations: state.integrations.map((item) =>
+      item.id === "strava"
+        ? { ...item, connected: true, connectedAt: now, lastSyncAt: now }
+        : item,
+    ),
+    syncLog: [connectedEvent, ...state.syncLog].slice(0, 40),
+  });
+  await syncNow(true);
+}
+
+export function disconnectStrava() {
+  const now = new Date().toISOString();
+  const disconnectedEvent: SyncEvent = {
+    id: uid("sync"),
+    at: now,
+    source: "strava",
+    kind: "info",
+    message: "Disconnected Strava.",
+  };
+  emit({
+    ...state,
+    strava: undefined,
+    integrations: state.integrations.map((item) =>
+      item.id === "strava" ? { ...item, connected: false, connectedAt: undefined, lastSyncAt: undefined } : item,
+    ),
+    syncLog: [disconnectedEvent, ...state.syncLog].slice(0, 40),
+  });
 }
 
 export function setAutoSync(enabled: boolean) {
   emit({ ...state, autoSync: enabled });
 }
 
-export function syncNow(silent = false) {
-  const result = runSync(state);
+async function pullStrava(stateIn: AppState): Promise<AppState> {
+  if (!stateIn.strava) return stateIn;
+
+  try {
+    const existing = new Set(stateIn.runs.map((run) => run.externalId).filter(Boolean) as string[]);
+    const { auth, imported } = await fetchStravaRuns(stateIn.strava, existing);
+    const now = new Date().toISOString();
+    const events: SyncEvent[] =
+      imported.length > 0
+        ? imported.map((run) => ({
+            id: uid("sync"),
+            at: now,
+            source: "strava" as const,
+            kind: "run" as const,
+            message: `Imported ${run.distanceKm.toFixed(1)} km · ${run.notes?.split(" · ")[0] ?? "run"}.`,
+          }))
+        : [];
+
+    return {
+      ...stateIn,
+      strava: auth,
+      runs: imported.length > 0 ? [...imported, ...stateIn.runs] : stateIn.runs,
+      syncLog: [...events, ...stateIn.syncLog].slice(0, 40),
+    };
+  } catch (error) {
+    const now = new Date().toISOString();
+    const failedEvent: SyncEvent = {
+      id: uid("sync"),
+      at: now,
+      source: "strava",
+      kind: "error",
+      message: error instanceof Error ? error.message : "Strava sync failed.",
+    };
+    return {
+      ...stateIn,
+      syncLog: [failedEvent, ...stateIn.syncLog].slice(0, 40),
+    };
+  }
+}
+
+export async function syncNow(silent = false) {
+  let current = await pullStrava(state);
+  const result = runSync(current);
   emit(result.state);
   return silent ? result : result;
 }

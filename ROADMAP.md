@@ -16,14 +16,22 @@ Secondary tracks (later):
 
 Recommended order: **Capacitor → real integrations → optional cloud sync → optional PWA polish**.
 
-## Phase 1 — Capacitor shell
+## Phase 1 — Capacitor shell ✅ (in PR)
 
-1. Add `@capacitor/core`, `@capacitor/cli`, iOS + Android projects
-2. Point Capacitor `webDir` at Vite `dist/`; keep `GITHUB_PAGES` base path separate from native builds (`base: './'` for Capacitor)
-3. Smoke-test all tabs in iOS Simulator and Android emulator
-4. Publish internal TestFlight / Play internal testing
+Done in this repo:
 
-**First files to touch:** [`src/pages/Run.tsx`](src/pages/Run.tsx), [`src/lib/geo.ts`](src/lib/geo.ts), [`src/pages/Integrations.tsx`](src/pages/Integrations.tsx), [`src/components/BarcodeSheet.tsx`](src/components/BarcodeSheet.tsx)
+1. `@capacitor/core`, `@capacitor/cli`, iOS + Android projects (`android/`, `ios/`)
+2. Capacitor `webDir` → Vite `dist/`; separate builds: `build:pages` (GitHub Pages), `build:cap` (`base: './'`)
+3. Status bar + splash screen init on native launch
+4. Location permission strings prepared for Run tab (Android manifest + iOS Info.plist)
+
+**Your next steps (local):**
+
+- Run `npm run cap:sync`, then open Xcode or Android Studio — see [docs/NATIVE.md](docs/NATIVE.md)
+- Smoke-test all tabs in iOS Simulator and Android emulator
+- Publish internal TestFlight / Play internal testing
+
+**Phase 2 first files to touch:** [`src/pages/Run.tsx`](src/pages/Run.tsx), [`src/lib/geo.ts`](src/lib/geo.ts), [`src/pages/Integrations.tsx`](src/pages/Integrations.tsx), [`src/components/BarcodeSheet.tsx`](src/components/BarcodeSheet.tsx)
 
 ## Phase 2 — Replace simulated features
 

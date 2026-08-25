@@ -1,25 +1,89 @@
+import { useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { RefreshCw } from "lucide-react";
 import { Card } from "../components/Heatmap";
 import { INTEGRATION_CATALOG, integrationMeta } from "../lib/integrations";
 import { relativeSyncTime } from "../lib/sync";
-import { setAutoSync, setIntegrationConnected, syncNow, useAppState } from "../lib/store";
+import {
+  STRAVA_STATE_KEY,
+  stravaAuthorizeUrl,
+  stravaConfigured,
+} from "../lib/strava";
+import {
+  completeStravaOAuth,
+  disconnectStrava,
+  setAutoSync,
+  setIntegrationConnected,
+  syncNow,
+  useAppState,
+} from "../lib/store";
 import type { IntegrationId } from "../lib/types";
 
 export function IntegrationsPage() {
   const state = useAppState();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const [syncing, setSyncing] = useState(false);
+  const [stravaBusy, setStravaBusy] = useState(false);
+  const [stravaError, setStravaError] = useState<string | null>(null);
   const connected = state.integrations.filter((item) => item.connected).length;
+  const stravaLive = stravaConfigured();
+
+  useEffect(() => {
+    const code = searchParams.get("code");
+    const oauthState = searchParams.get("state");
+    if (!code) return;
+
+    const expected = sessionStorage.getItem(STRAVA_STATE_KEY);
+    sessionStorage.removeItem(STRAVA_STATE_KEY);
+    if (!expected || oauthState !== expected) {
+      setStravaError("Strava login failed — please try again.");
+      navigate("/integrations", { replace: true });
+      return;
+    }
+
+    setStravaBusy(true);
+    completeStravaOAuth(code)
+      .then(() => navigate("/integrations", { replace: true }))
+      .catch((error) => {
+        setStravaError(error instanceof Error ? error.message : "Strava connect failed.");
+        navigate("/integrations", { replace: true });
+      })
+      .finally(() => setStravaBusy(false));
+  }, [searchParams, navigate]);
+
+  function startStravaOAuth() {
+    const oauthState = crypto.randomUUID();
+    sessionStorage.setItem(STRAVA_STATE_KEY, oauthState);
+    window.location.href = stravaAuthorizeUrl(oauthState);
+  }
+
+  async function handleSyncNow() {
+    setSyncing(true);
+    try {
+      await syncNow(false);
+    } finally {
+      setSyncing(false);
+    }
+  }
 
   return (
     <div className="space-y-4 animate-pop">
       <div>
-        <p className="text-xs uppercase tracking-[0.18em] text-step">Phase 3</p>
+        <p className="text-xs uppercase tracking-[0.18em] text-step">Connections</p>
         <h2 className="text-2xl font-semibold">Integrations</h2>
       </div>
 
+      {stravaError ? (
+        <Card className="border-run/40 bg-run/10">
+          <p className="text-sm text-run">{stravaError}</p>
+        </Card>
+      ) : null}
+
       <Card>
         <p className="text-sm text-fog">
-          One Life becomes your central dashboard. Connect wearables and running apps — this prototype simulates real
-          sync until native HealthKit / Health Connect ships.
+          One Life becomes your central dashboard. Connect wearables and running apps — Strava uses real OAuth when
+          configured; other sources stay simulated until native HealthKit ships.
         </p>
         <div className="mt-4 flex items-center justify-between rounded-2xl bg-ink px-3 py-3">
           <div>
@@ -35,11 +99,12 @@ export function IntegrationsPage() {
         </div>
         <button
           type="button"
-          onClick={() => syncNow(false)}
-          className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl bg-life py-3 font-semibold text-ink"
+          disabled={syncing || stravaBusy}
+          onClick={() => void handleSyncNow()}
+          className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl bg-life py-3 font-semibold text-ink disabled:opacity-60"
         >
-          <RefreshCw size={16} />
-          Sync now
+          <RefreshCw size={16} className={syncing ? "animate-spin" : ""} />
+          {syncing ? "Syncing…" : "Sync now"}
         </button>
         <p className="mt-2 text-center text-xs text-fog">
           {connected} connected · last activity {relativeSyncTime(state.syncLog[0]?.at)}
@@ -49,6 +114,8 @@ export function IntegrationsPage() {
       {INTEGRATION_CATALOG.map((meta) => {
         const live = state.integrations.find((item) => item.id === meta.id);
         const on = live?.connected ?? false;
+        const isStrava = meta.id === "strava";
+
         return (
           <Card key={meta.id}>
             <div className="flex items-start justify-between gap-3">
@@ -56,18 +123,57 @@ export function IntegrationsPage() {
                 <p className="text-2xl">{meta.emoji}</p>
                 <h3 className="font-semibold">{meta.name}</h3>
                 <p className="text-xs text-fog">{meta.platform}</p>
+                {isStrava && state.strava?.athleteName ? (
+                  <p className="mt-1 text-xs text-life">Connected as {state.strava.athleteName}</p>
+                ) : null}
               </div>
-              <button
-                type="button"
-                onClick={() => setIntegrationConnected(meta.id, !on)}
-                className={`rounded-full px-4 py-2 text-sm font-medium ${
-                  on ? "bg-card text-fog" : "bg-step text-ink"
-                }`}
-              >
-                {on ? "Disconnect" : "Connect"}
-              </button>
+              {isStrava && stravaLive ? (
+                on ? (
+                  <button
+                    type="button"
+                    disabled={stravaBusy}
+                    onClick={() => disconnectStrava()}
+                    className="rounded-full bg-card px-4 py-2 text-sm font-medium text-fog"
+                  >
+                    Disconnect
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={stravaBusy}
+                    onClick={startStravaOAuth}
+                    className="rounded-full bg-[#fc4c02] px-4 py-2 text-sm font-medium text-white"
+                  >
+                    {stravaBusy ? "Connecting…" : "Connect with Strava"}
+                  </button>
+                )
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setIntegrationConnected(meta.id, !on)}
+                  className={`rounded-full px-4 py-2 text-sm font-medium ${
+                    on ? "bg-card text-fog" : "bg-step text-ink"
+                  }`}
+                >
+                  {on ? "Disconnect" : "Connect"}
+                </button>
+              )}
             </div>
             <p className="mt-2 text-sm text-fog">{meta.blurb}</p>
+            {isStrava && !stravaLive ? (
+              <p className="mt-2 text-xs text-fog">
+                Real Strava OAuth needs API keys — see{" "}
+                <a
+                  href="https://github.com/JackAsh23/All-in-One-fitness-App/blob/main/docs/STRAVA.md"
+                  className="text-life underline"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  docs/STRAVA.md
+                </a>
+                . Demo connect imports sample runs.
+              </p>
+            ) : null}
             <p className="mt-2 text-xs text-fog">
               Syncs: {meta.syncs.join(", ")}
               {on && live?.lastSyncAt ? ` · ${relativeSyncTime(live.lastSyncAt)}` : ""}

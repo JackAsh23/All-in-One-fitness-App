@@ -22,60 +22,50 @@ npm run dev
 Open [http://localhost:5173](http://localhost:5173). The first load seeds ~17 weeks of demo data in `localStorage` so the heatmaps look alive. Use **Reload demo year** on Profile to reset.
 
 ```bash
-npm run build    # production build → dist/
-npm run preview  # serve dist/ on :4173
-npm test         # Vitest unit tests
+npm run build        # production build → dist/
+npm run build:pages  # GitHub Pages base path
+npm run build:cap    # Capacitor native (relative assets)
+npm run preview      # serve dist/ on :4173
+npm test             # Vitest unit tests
 ```
 
 ## What’s in this prototype
 
-### v0.1 — Personal tracker
-- **Home** — consistency score, streak, timeline, macros, steps
-- **Run** — simulated run + quick log, stats, history
-- **Workout** — templates, set logging, rest timer
-- **Nutrition** — macro bars, Filipino food search
-- **Consistency** — GitHub-style heatmaps
-- **Profile** — goals and score priorities
+### v1.2 — PWA + backup + barcode
+- **PWA** — Add to Home Screen, offline shell, auto-updates
+- **Profile** — Export / import JSON backup
+- **Eat** — Open Food Facts barcode lookup + camera scan
 
-### v0.2 — Heatmaps & analytics
-- Monthly summaries, streak tracking, tap-a-day breakdown
-
-### v0.3 — Automation & integrations (simulated)
-- **Integrations** — Apple Health, Health Connect, Strava, Garmin
-- **Auto-sync** — background pull for steps and imported runs
-
-### v0.4 — Smart nutrition
-- Barcode scan, recent/favorites, saved meals, portion steppers
-
-### v1.0 — Consistency OS
-- **Goal modes** — Balanced, Marathon block, Strength focus, Cut phase
-- **Consistency OS hub** — dynamic score pillars, streak labels, monthly recaps
-- **One Life Wrapped** — Spotify-style yearly recap at `/wrapped`
+### v1.3 — Capacitor + Strava OAuth
+- **Native shell** — iOS + Android via Capacitor ([docs/NATIVE.md](docs/NATIVE.md))
+- **Strava** — Real OAuth connect + activity import ([docs/STRAVA.md](docs/STRAVA.md))
 
 ### v1.1 — Polish + GPS, plans, food log
-- **Home** — fuel rings no longer overlap kcal / protein labels
-- **Run** — Walk mode, GPS permission gate, route planner, live Strava-style map
-- **Lift** — weekly training plans, **Exercise Gallery** (302 PNGs from `@bryllim/workout-guide`)
-- **Eat** — **Log food** at the top, meal **+** buttons, floating **+**, four modes: Search, Barcode Scan, Meal Scan, Quick ADD
-- **Stats** — dedicated Weight tab with trend line, 7/30-day change, weigh-in calendar
-- **OS** — run / lift / eat heatmaps use distinct colors
-- **Navigation** — header back on Profile, Integrations, Exercise Gallery, Wrapped, live sessions, and run overlays
+- **Run** — Walk mode, GPS permission gate, route planner, live map
+- **Lift** — weekly training plans, **Exercise Gallery** (302 PNGs)
+- **Eat** — Log food, barcode, meal scan, quick add
+- **Stats** — Weight tab with trend line and calendar
+- **Navigation** — header back on nested screens
 
-Data never leaves the browser. No accounts yet.
+Data stays on your device unless you connect Strava (OAuth tokens stored locally).
 
-See [ROADMAP.md](ROADMAP.md) for v2 direction (Capacitor, real device APIs, cloud sync).
+See [ROADMAP.md](ROADMAP.md) for v2 direction.
 
-### Install on your phone (PWA)
+## Install on your phone (PWA)
 
 1. Open **https://jackash23.github.io/All-in-One-fitness-App/** in Safari (iPhone) or Chrome (Android)
-2. **Add to Home Screen** — the app runs standalone with offline shell caching
-3. After updates deploy, reopen the app once to pick up the latest service worker
+2. **Add to Home Screen**
+3. Profile → **Get latest app version** after deploys
 
-Icons and offline cache work on the GitHub Pages build (`npm run build:pages`).
+## Native app (Capacitor)
 
-**Backup:** Profile → Export backup (JSON). Import on a new phone after Add to Home Screen.
+```bash
+npm run cap:sync      # build for native + copy dist/ into android/ and ios/
+npm run cap:ios       # open Xcode (macOS)
+npm run cap:android   # open Android Studio
+```
 
-**Barcode:** Eat → Barcode Scan → camera or type digits → Open Food Facts lookup (demo barcodes use local Filipino foods).
+Full setup: **[docs/NATIVE.md](docs/NATIVE.md)**
 
 ## Deploy
 
@@ -86,7 +76,5 @@ GitHub Pages builds on every push to `main`.
 1. **Settings → Pages → Build and deployment → GitHub Actions**
 2. Push to `main` (or re-run **Actions → Deploy Pages**)
 3. App is served at **https://jackash23.github.io/All-in-One-fitness-App/**
-
-The build uses base path `/All-in-One-fitness-App/` ([`vite.config.ts`](vite.config.ts)).
 
 Pull requests run build + tests via [`.github/workflows/ci.yml`](.github/workflows/ci.yml).

@@ -8,6 +8,7 @@ import { fileURLToPath, URL } from "node:url";
 
 const workoutAssets = fileURLToPath(new URL("./node_modules/@bryllim/workout-guide/assets", import.meta.url));
 const isGithubPages = process.env.GITHUB_PAGES === "true";
+const isCapacitor = process.env.CAPACITOR === "true";
 const GITHUB_PAGES_BASE = "/All-in-One-fitness-App/";
 const GITHUB_PAGES_ORIGIN = "https://jackash23.github.io";
 const pagesStartUrl = `${GITHUB_PAGES_ORIGIN}${GITHUB_PAGES_BASE}`;
@@ -53,12 +54,10 @@ function workoutGuideAssets(): Plugin {
   };
 }
 
-export default defineConfig({
-  base: isGithubPages ? GITHUB_PAGES_BASE : "/",
-  plugins: [
-    react(),
-    tailwindcss(),
-    workoutGuideAssets(),
+const plugins = [react(), tailwindcss(), workoutGuideAssets()];
+
+if (!isCapacitor) {
+  plugins.push(
     VitePWA({
       registerType: "autoUpdate",
       injectRegister: null,
@@ -91,8 +90,16 @@ export default defineConfig({
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
       },
     }),
-    githubPagesSpaFallback(),
-  ],
+  );
+}
+
+if (isGithubPages) {
+  plugins.push(githubPagesSpaFallback());
+}
+
+export default defineConfig({
+  base: isGithubPages ? GITHUB_PAGES_BASE : isCapacitor ? "./" : "/",
+  plugins,
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),
