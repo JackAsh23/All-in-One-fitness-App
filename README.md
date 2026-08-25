@@ -27,9 +27,14 @@ Open [http://localhost:5173](http://localhost:5173). The first load seeds ~17 we
 - Monthly summaries, streak tracking, tap-a-day breakdown
 
 ### v0.3 — Automation & integrations (simulated)
-- **Integrations** (`/integrations`) — Apple Health, Health Connect, Strava, Garmin
-- **Auto-sync** — background pull every ~90s for steps and imported runs
-- **Sync log** — see what was imported and when
-- Real HealthKit / Health Connect needs a native app later; this proves the central-dashboard UX
+- **Integrations** — Apple Health, Health Connect, Strava, Garmin
+- **Auto-sync** — background pull for steps and imported runs
+
+### v0.4 — Smart nutrition
+- **Barcode scan** — Jollibee, McDo, 7-Eleven, Filipino staples
+- **Recent & favorites** — one-tap re-log and starred foods
+- **Saved meals** — log a whole plate; save today’s lunch as a template
+- **Portion stepper** — adjust grams on logged items
+- **Category filters** — Filipino, Restaurants, Convenience, etc.
 
 Data never leaves the browser. No accounts yet.

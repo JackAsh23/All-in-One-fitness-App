@@ -1,10 +1,22 @@
 import { useSyncExternalStore } from "react";
 import { createDemoState } from "./demo";
 import { defaultIntegrations } from "./integrations";
+import { getFoodById } from "./nutrition";
 import { runSync } from "./sync";
-import type { AppState, FoodLog, IntegrationId, Profile, RunLog, WorkoutLog } from "./types";
+import { macrosForGrams } from "./foods";
+import { nowTime, todayISO, uid } from "./dates";
+import type {
+  AppState,
+  FoodLog,
+  IntegrationId,
+  MealType,
+  Profile,
+  RunLog,
+  SavedMeal,
+  WorkoutLog,
+} from "./types";
 
-const KEY = "one-life-fitness-v2";
+const KEY = "one-life-fitness-v3";
 
 let state: AppState = load();
 const listeners = new Set<() => void>();
@@ -18,11 +30,14 @@ function migrate(raw: Record<string, unknown>): AppState | null {
     integrations: Array.isArray(base.integrations) ? base.integrations : defaultIntegrations(),
     autoSync: typeof base.autoSync === "boolean" ? base.autoSync : true,
     syncLog: Array.isArray(base.syncLog) ? base.syncLog : [],
+    favoriteFoodIds: Array.isArray(base.favoriteFoodIds) ? base.favoriteFoodIds : [],
+    recentFoods: Array.isArray(base.recentFoods) ? base.recentFoods : [],
+    savedMeals: Array.isArray(base.savedMeals) ? base.savedMeals : [],
   };
 }
 
 function load(): AppState {
-  for (const key of [KEY, "one-life-fitness-v1"]) {
+  for (const key of [KEY, "one-life-fitness-v2", "one-life-fitness-v1"]) {
     try {
       const raw = localStorage.getItem(key);
       if (!raw) continue;
@@ -47,6 +62,12 @@ function persist() {
 function emit(next: AppState) {
   state = next;
   persist();
+}
+
+function trackRecent(foodId: string, grams: number) {
+  const at = new Date().toISOString();
+  const recent = [{ foodId, grams, at }, ...state.recentFoods.filter((entry) => entry.foodId !== foodId)].slice(0, 24);
+  return recent;
 }
 
 function ensureAutoSyncTimer() {
@@ -97,12 +118,119 @@ export function addWorkout(workout: WorkoutLog) {
   emit({ ...state, workouts: [workout, ...state.workouts] });
 }
 
+export function logFoodItem(input: {
+  foodId: string;
+  grams: number;
+  meal: MealType;
+  date?: string;
+}) {
+  const food = getFoodById(input.foodId);
+  if (!food) return;
+  const macros = macrosForGrams(food, input.grams);
+  const entry: FoodLog = {
+    id: uid("food"),
+    date: input.date ?? todayISO(),
+    time: nowTime(),
+    meal: input.meal,
+    name: food.name,
+    foodId: food.id,
+    grams: input.grams,
+    ...macros,
+  };
+  emit({
+    ...state,
+    foods: [entry, ...state.foods],
+    recentFoods: trackRecent(food.id, input.grams),
+  });
+}
+
 export function addFood(food: FoodLog) {
-  emit({ ...state, foods: [food, ...state.foods] });
+  emit({
+    ...state,
+    foods: [food, ...state.foods],
+    recentFoods: food.foodId ? trackRecent(food.foodId, food.grams) : state.recentFoods,
+  });
+}
+
+export function updateFoodPortion(id: string, grams: number) {
+  const target = state.foods.find((food) => food.id === id);
+  if (!target) return;
+  const food = target.foodId ? getFoodById(target.foodId) : undefined;
+  const macros = food
+    ? macrosForGrams(food, grams)
+    : {
+        calories: Math.round((target.calories / target.grams) * grams),
+        protein: Math.round((target.protein / target.grams) * grams * 10) / 10,
+        carbs: Math.round((target.carbs / target.grams) * grams * 10) / 10,
+        fat: Math.round((target.fat / target.grams) * grams * 10) / 10,
+      };
+  emit({
+    ...state,
+    foods: state.foods.map((item) =>
+      item.id === id ? { ...item, grams, ...macros } : item,
+    ),
+  });
 }
 
 export function removeFood(id: string) {
   emit({ ...state, foods: state.foods.filter((food) => food.id !== id) });
+}
+
+export function toggleFavoriteFood(foodId: string) {
+  const exists = state.favoriteFoodIds.includes(foodId);
+  emit({
+    ...state,
+    favoriteFoodIds: exists
+      ? state.favoriteFoodIds.filter((id) => id !== foodId)
+      : [foodId, ...state.favoriteFoodIds],
+  });
+}
+
+export function saveSavedMeal(meal: Omit<SavedMeal, "id">) {
+  emit({
+    ...state,
+    savedMeals: [{ ...meal, id: uid("meal") }, ...state.savedMeals],
+  });
+}
+
+export function removeSavedMeal(id: string) {
+  emit({ ...state, savedMeals: state.savedMeals.filter((meal) => meal.id !== id) });
+}
+
+export function logSavedMeal(savedMealId: string, meal: MealType) {
+  const saved = state.savedMeals.find((item) => item.id === savedMealId);
+  if (!saved) return;
+  let next = state;
+  for (const item of saved.items) {
+    const food = getFoodById(item.foodId);
+    if (!food) continue;
+    const macros = macrosForGrams(food, item.grams);
+    const entry: FoodLog = {
+      id: uid("food"),
+      date: todayISO(),
+      time: nowTime(),
+      meal,
+      name: food.name,
+      foodId: food.id,
+      grams: item.grams,
+      ...macros,
+    };
+    next = {
+      ...next,
+      foods: [entry, ...next.foods],
+      recentFoods: trackRecent(food.id, item.grams),
+    };
+  }
+  emit(next);
+}
+
+export function saveMealFromToday(mealType: MealType, name: string, emoji: string) {
+  const today = todayISO();
+  const items = state.foods
+    .filter((food) => food.date === today && food.meal === mealType && food.foodId)
+    .map((food) => ({ foodId: food.foodId!, grams: food.grams }));
+  if (items.length === 0) return;
+  saveSavedMeal({ name, emoji, items });
 }
 
 export function setSteps(date: string, steps: number) {

@@ -102,7 +102,7 @@ export function ProfilePage() {
         Reload demo year
       </button>
       <p className="px-1 text-center text-xs text-fog">
-        One Life v0.3 — tracker, heatmaps, and simulated wearable sync. Data stays in this browser.
+        One Life v0.4 — tracker, heatmaps, sync, smart nutrition. Data stays in this browser.
       </p>
     </div>
   );

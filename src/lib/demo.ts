@@ -34,6 +34,7 @@ function logFood(date: string, time: string, meal: FoodLog["meal"], foodId: stri
     time,
     meal,
     name: food.name,
+    foodId: food.id,
     grams,
     ...macros,
   };
@@ -205,6 +206,43 @@ export function createDemoState(today = todayISO()): AppState {
         source: "apple-health",
         kind: "steps",
         message: "Synced 8,421 steps from Apple Health.",
+      },
+    ],
+    favoriteFoodIds: ["adobo", "chicken-breast", "rice", "kwek", "jollibee-chickenjoy"],
+    recentFoods: [
+      { foodId: "chicken-breast", grams: 150, at: new Date().toISOString() },
+      { foodId: "rice", grams: 200, at: new Date().toISOString() },
+      { foodId: "egg", grams: 100, at: new Date().toISOString() },
+      { foodId: "garlic-rice", grams: 150, at: new Date().toISOString() },
+    ],
+    savedMeals: [
+      {
+        id: uid("meal"),
+        name: "Chicken rice bowl",
+        emoji: "🍱",
+        items: [
+          { foodId: "rice", grams: 200 },
+          { foodId: "chicken-breast", grams: 150 },
+          { foodId: "egg", grams: 100 },
+        ],
+      },
+      {
+        id: uid("meal"),
+        name: "Tapsilog breakfast",
+        emoji: "🍳",
+        items: [
+          { foodId: "tapsilog", grams: 350 },
+          { foodId: "calamansi-juice", grams: 250 },
+        ],
+      },
+      {
+        id: uid("meal"),
+        name: "Post-workout snack",
+        emoji: "☕",
+        items: [
+          { foodId: "protein-shake", grams: 330 },
+          { foodId: "banana", grams: 120 },
+        ],
       },
     ],
   };

@@ -74,11 +74,30 @@ export type FoodLog = {
   time: string;
   meal: MealType;
   name: string;
+  foodId?: string;
   grams: number;
   calories: number;
   protein: number;
   carbs: number;
   fat: number;
+};
+
+export type SavedMealItem = {
+  foodId: string;
+  grams: number;
+};
+
+export type SavedMeal = {
+  id: string;
+  name: string;
+  emoji: string;
+  items: SavedMealItem[];
+};
+
+export type RecentFood = {
+  foodId: string;
+  grams: number;
+  at: string;
 };
 
 export type StepLog = {
@@ -95,6 +114,9 @@ export type AppState = {
   integrations: Integration[];
   autoSync: boolean;
   syncLog: SyncEvent[];
+  favoriteFoodIds: string[];
+  recentFoods: RecentFood[];
+  savedMeals: SavedMeal[];
 };
 
 export type DayParts = {
