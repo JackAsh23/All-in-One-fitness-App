@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { Card } from "../components/Heatmap";
 import { GOAL_MODES } from "../lib/goalModes";
 import { defaultPriorities } from "../lib/scoring";
-import { resetDemo, setGoalMode, updateProfile, useAppState } from "../lib/store";
+import { downloadBackup, importBackup, resetDemo, setGoalMode, updateProfile, useAppState } from "../lib/store";
 import type { Priorities } from "../lib/types";
 
 export function ProfilePage() {
@@ -19,6 +19,7 @@ export function ProfilePage() {
   const [targetWeight, setTargetWeight] = useState(String(state.profile.targetWeightKg ?? 74));
   const [priorities, setPriorities] = useState<Priorities>(state.profile.priorities);
   const [saved, setSaved] = useState(false);
+  const [importStatus, setImportStatus] = useState<string | null>(null);
 
   function save() {
     updateProfile({
@@ -127,6 +128,45 @@ export function ProfilePage() {
       <button type="button" onClick={save} className="w-full rounded-3xl bg-life py-3 font-semibold text-ink">
         {saved ? "Saved" : "Save profile"}
       </button>
+      <Card>
+        <h3 className="mb-2 font-semibold">Backup data</h3>
+        <p className="text-sm text-fog">
+          Export everything (runs, workouts, food log, weight) as a JSON file. Import on a new phone or after clearing
+          Safari data.
+        </p>
+        <div className="mt-4 flex flex-col gap-2">
+          <button
+            type="button"
+            onClick={() => downloadBackup()}
+            className="w-full rounded-2xl border border-life/40 bg-life/10 py-3 font-medium text-life"
+          >
+            Export backup
+          </button>
+          <label className="block w-full cursor-pointer rounded-2xl border border-line py-3 text-center text-sm text-snow">
+            Import backup
+            <input
+              type="file"
+              accept="application/json,.json"
+              className="hidden"
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                event.target.value = "";
+                if (!file) return;
+                file.text().then((raw) => {
+                  const result = importBackup(raw);
+                  if (result.ok) {
+                    setImportStatus("Backup restored.");
+                    window.setTimeout(() => setImportStatus(null), 2400);
+                  } else {
+                    window.alert(result.error);
+                  }
+                });
+              }}
+            />
+          </label>
+          {importStatus ? <p className="text-center text-sm text-life">{importStatus}</p> : null}
+        </div>
+      </Card>
       <button
         type="button"
         onClick={resetDemo}

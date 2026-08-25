@@ -73,6 +73,10 @@ See [ROADMAP.md](ROADMAP.md) for v2 direction (Capacitor, real device APIs, clou
 
 Icons and offline cache work on the GitHub Pages build (`npm run build:pages`).
 
+**Backup:** Profile → Export backup (JSON). Import on a new phone after Add to Home Screen.
+
+**Barcode:** Eat → Barcode Scan → camera or type digits → Open Food Facts lookup (demo barcodes use local Filipino foods).
+
 ## Deploy
 
 GitHub Pages builds on every push to `main`.

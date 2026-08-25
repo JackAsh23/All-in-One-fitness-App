@@ -10,7 +10,8 @@ Secondary tracks (later):
 
 | Track | When | Why |
 |-------|------|-----|
-| **PWA** | In progress on web | “Add to Home Screen”, offline shell, PNG icons — works on GitHub Pages today |
+| **PWA** | Shipped on web | Icons, offline shell, Add to Home Screen on GitHub Pages |
+| **Backup + barcode** | Shipped on web | Profile export/import JSON; Open Food Facts barcode lookup |
 | **Backend + accounts** | When multi-device sync is needed | Move `AppState` off pure `localStorage`; keep demo mode for guests |
 
 Recommended order: **Capacitor → real integrations → optional cloud sync → optional PWA polish**.

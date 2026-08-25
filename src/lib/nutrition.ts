@@ -1,8 +1,9 @@
 import type { FoodItem } from "./foods";
 import { FOODS } from "./foods";
+import { getCachedOffFood } from "./openFoodFacts";
 
 export function getFoodById(id: string): FoodItem | undefined {
-  return FOODS.find((food) => food.id === id);
+  return FOODS.find((food) => food.id === id) ?? getCachedOffFood(id);
 }
 
 export function foodCategories(): string[] {

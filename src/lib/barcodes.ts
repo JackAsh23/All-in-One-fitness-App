@@ -1,3 +1,5 @@
+import { lookupOpenFoodFacts } from "./openFoodFacts";
+
 export const BARCODE_MAP: Record<string, string> = {
   "4800123456789": "jollibee-chickenjoy",
   "4800987654321": "7e-siopao",
@@ -21,4 +23,13 @@ export const DEMO_BARCODES = [
 export function lookupBarcode(code: string): string | undefined {
   const normalized = code.replace(/\D/g, "");
   return BARCODE_MAP[normalized];
+}
+
+export async function resolveBarcode(code: string): Promise<{ foodId: string; grams: number } | null> {
+  const localId = lookupBarcode(code);
+  if (localId) return { foodId: localId, grams: 150 };
+
+  const food = await lookupOpenFoodFacts(code);
+  if (!food) return null;
+  return { foodId: food.id, grams: food.servingGrams ?? 100 };
 }

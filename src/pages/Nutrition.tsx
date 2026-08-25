@@ -7,7 +7,7 @@ import { MealScanSheet } from "../components/MealScanSheet";
 import { MonthCalendar } from "../components/MonthCalendar";
 import { PortionStepper } from "../components/PortionStepper";
 import { Sheet } from "../components/Sheet";
-import { lookupBarcode } from "../lib/barcodes";
+import { resolveBarcode } from "../lib/barcodes";
 import { foodCategories, buildRecentList, getFoodById } from "../lib/nutrition";
 import { FOODS, macrosForGrams, searchFoods } from "../lib/foods";
 import { weightStats } from "../lib/analytics";
@@ -46,6 +46,7 @@ export function NutritionPage() {
   const [grams, setGrams] = useState(150);
   const [chooser, setChooser] = useState<Chooser>("closed");
   const [barcodeOpen, setBarcodeOpen] = useState(false);
+  const [barcodeLoading, setBarcodeLoading] = useState(false);
   const [scanOpen, setScanOpen] = useState(false);
   const [selectedId, setSelectedId] = useState(FOODS[0]?.id);
   const [quickName, setQuickName] = useState("");
@@ -82,7 +83,7 @@ export function NutritionPage() {
     return searchFoods(query).filter((food) => !category || food.category === category);
   }, [query, category]);
 
-  const selected = FOODS.find((food) => food.id === selectedId) ?? results[0];
+  const selected = getFoodById(selectedId ?? "") ?? results[0];
   const preview = selected ? macrosForGrams(selected, grams) : null;
   const recent = buildRecentList(state.recentFoods);
   const favorites = state.favoriteFoodIds.map(getFoodById).filter(Boolean);
@@ -99,14 +100,21 @@ export function NutritionPage() {
     setChooser("closed");
   }
 
-  function handleBarcode(code: string) {
-    const foodId = lookupBarcode(code);
-    if (!foodId) {
-      window.alert("Barcode not in database yet. Try a demo scan.");
-      return;
+  async function handleBarcode(code: string) {
+    setBarcodeLoading(true);
+    try {
+      const resolved = await resolveBarcode(code);
+      if (!resolved) {
+        window.alert("Product not found. Try a demo scan or search by name.");
+        return;
+      }
+      setBarcodeOpen(false);
+      openFood(resolved.foodId, resolved.grams);
+    } catch {
+      window.alert("Could not reach Open Food Facts. Check your connection and try again.");
+    } finally {
+      setBarcodeLoading(false);
     }
-    setBarcodeOpen(false);
-    openFood(foodId, 150);
   }
 
   function saveQuick() {
@@ -505,7 +513,12 @@ export function NutritionPage() {
         </button>
       </Sheet>
 
-      <BarcodeSheet open={barcodeOpen} onClose={() => setBarcodeOpen(false)} onScan={handleBarcode} />
+      <BarcodeSheet
+        open={barcodeOpen}
+        loading={barcodeLoading}
+        onClose={() => setBarcodeOpen(false)}
+        onScan={(code) => void handleBarcode(code)}
+      />
       <MealScanSheet
         open={scanOpen}
         onClose={() => setScanOpen(false)}

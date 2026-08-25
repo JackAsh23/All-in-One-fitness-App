@@ -9,6 +9,10 @@ export type FoodItem = {
     carbs: number;
     fat: number;
   };
+  /** Open Food Facts barcode when imported from scan */
+  barcode?: string;
+  /** Suggested portion from package label */
+  servingGrams?: number;
 };
 
 export const FOODS: FoodItem[] = [

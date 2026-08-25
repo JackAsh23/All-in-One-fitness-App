@@ -120,6 +120,46 @@ export function resetDemo() {
   emit(createDemoState());
 }
 
+const BACKUP_VERSION = 6;
+
+export function exportBackup(): string {
+  return JSON.stringify(
+    {
+      version: BACKUP_VERSION,
+      exportedAt: new Date().toISOString(),
+      state,
+    },
+    null,
+    2,
+  );
+}
+
+export function downloadBackup() {
+  const blob = new Blob([exportBackup()], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = `one-life-backup-${todayISO()}.json`;
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
+
+export function importBackup(raw: string): { ok: true } | { ok: false; error: string } {
+  try {
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    const payload =
+      parsed.state && typeof parsed.state === "object"
+        ? (parsed.state as Record<string, unknown>)
+        : parsed;
+    const migrated = migrate(payload);
+    if (!migrated) return { ok: false, error: "This file is not a valid One Life backup." };
+    emit(migrated);
+    return { ok: true };
+  } catch {
+    return { ok: false, error: "Could not read the backup file." };
+  }
+}
+
 export function setGoalMode(mode: GoalMode) {
   const meta = goalModeMeta(mode);
   updateProfile({ goalMode: mode, priorities: meta.priorities });
