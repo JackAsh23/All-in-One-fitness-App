@@ -1,5 +1,6 @@
 import { addDays, todayISO, uid } from "./dates";
 import { macrosForGrams, FOODS } from "./foods";
+import { defaultIntegrations } from "./integrations";
 import { defaultPriorities } from "./scoring";
 import type { AppState, FoodLog, RunLog, StepLog, WorkoutLog } from "./types";
 
@@ -118,6 +119,7 @@ export function createDemoState(today = todayISO()): AppState {
     durationSec: 32 * 60 + 41,
     calories: 318,
     notes: "Easy aerobic. Felt smooth after km 2.",
+    source: "apple-health",
   });
   workouts.push({
     id: uid("wo"),
@@ -194,5 +196,16 @@ export function createDemoState(today = todayISO()): AppState {
     workouts,
     foods,
     steps,
+    integrations: defaultIntegrations(),
+    autoSync: true,
+    syncLog: [
+      {
+        id: uid("sync"),
+        at: new Date().toISOString(),
+        source: "apple-health",
+        kind: "steps",
+        message: "Synced 8,421 steps from Apple Health.",
+      },
+    ],
   };
 }

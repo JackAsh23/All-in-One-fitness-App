@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Flame, PersonStanding, Salad, Dumbbell, Footprints } from "lucide-react";
 import { Card } from "../components/Heatmap";
 import { MacroBar, ProgressRing } from "../components/Progress";
+import { SyncBanner } from "../components/SyncBanner";
 import { formatDuration, formatLongDate, formatPace, formatTimeLabel, todayISO } from "../lib/dates";
 import { currentStreak, summarizeDay } from "../lib/scoring";
 import { bumpSteps, useAppState } from "../lib/store";
@@ -18,7 +19,7 @@ export function HomePage() {
       .filter((run) => run.date === today)
       .map((run) => ({
         time: run.time,
-        label: `${run.distanceKm.toFixed(1)} km Run`,
+        label: `${run.distanceKm.toFixed(1)} km Run${run.source && run.source !== "manual" ? ` · ${run.source.replace("-", " ")}` : ""}`,
         icon: "run" as const,
       })),
     ...state.workouts
@@ -52,6 +53,8 @@ export function HomePage() {
         </h2>
       </div>
 
+      <SyncBanner />
+
       <Card className="bg-gradient-to-br from-card to-ink-2">
         <div className="mb-4 flex items-start justify-between">
           <div>
@@ -77,7 +80,7 @@ export function HomePage() {
           icon={<PersonStanding size={18} />}
           label="Run"
           value={day.runKm ? `${day.runKm.toFixed(1)} km` : "Log a run"}
-          sub={day.runKm ? formatPace(day.runDurationSec, day.runKm) : "GPS or quick log"}
+          sub={day.runKm ? formatPace(day.runDurationSec, day.runKm) : "Manual or synced"}
           color="text-run"
         />
         <StatTile
@@ -103,7 +106,7 @@ export function HomePage() {
         >
           <div className="mb-3 flex items-center justify-between text-step">
             <Footprints size={18} />
-            <span className="text-[11px] text-fog">+1000</span>
+            <span className="text-[11px] text-fog">+1000 manual</span>
           </div>
           <p className="text-xs uppercase tracking-wide text-fog">Steps</p>
           <p className="text-xl font-semibold">

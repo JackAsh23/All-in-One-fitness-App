@@ -1,21 +1,39 @@
 import { useSyncExternalStore } from "react";
 import { createDemoState } from "./demo";
-import type { AppState, FoodLog, Profile, RunLog, StepLog, WorkoutLog } from "./types";
+import { defaultIntegrations } from "./integrations";
+import { runSync } from "./sync";
+import type { AppState, FoodLog, IntegrationId, Profile, RunLog, WorkoutLog } from "./types";
 
-const KEY = "one-life-fitness-v1";
+const KEY = "one-life-fitness-v2";
 
 let state: AppState = load();
 const listeners = new Set<() => void>();
+let autoSyncTimer: number | undefined;
+
+function migrate(raw: Record<string, unknown>): AppState | null {
+  if (!raw?.profile || !Array.isArray(raw.runs)) return null;
+  const base = raw as unknown as AppState;
+  return {
+    ...base,
+    integrations: Array.isArray(base.integrations) ? base.integrations : defaultIntegrations(),
+    autoSync: typeof base.autoSync === "boolean" ? base.autoSync : true,
+    syncLog: Array.isArray(base.syncLog) ? base.syncLog : [],
+  };
+}
 
 function load(): AppState {
-  try {
-    const raw = localStorage.getItem(KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw) as AppState;
-      if (parsed?.profile && Array.isArray(parsed.runs)) return parsed;
+  for (const key of [KEY, "one-life-fitness-v1"]) {
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) continue;
+      const parsed = migrate(JSON.parse(raw) as Record<string, unknown>);
+      if (parsed) {
+        if (key !== KEY) localStorage.setItem(KEY, JSON.stringify(parsed));
+        return parsed;
+      }
+    } catch {
+      /* try next key */
     }
-  } catch {
-    /* fresh start */
   }
   return createDemoState();
 }
@@ -23,11 +41,21 @@ function load(): AppState {
 function persist() {
   localStorage.setItem(KEY, JSON.stringify(state));
   listeners.forEach((listener) => listener());
+  ensureAutoSyncTimer();
 }
 
 function emit(next: AppState) {
   state = next;
   persist();
+}
+
+function ensureAutoSyncTimer() {
+  if (autoSyncTimer) window.clearInterval(autoSyncTimer);
+  autoSyncTimer = undefined;
+  const hasConnected = state.integrations.some((item) => item.connected);
+  if (state.autoSync && hasConnected) {
+    autoSyncTimer = window.setInterval(() => syncNow(true), 90_000);
+  }
 }
 
 export function getState() {
@@ -43,6 +71,13 @@ export function useAppState(): AppState {
   return useSyncExternalStore(subscribe, getState, getState);
 }
 
+export function initStore() {
+  ensureAutoSyncTimer();
+  if (state.integrations.some((item) => item.connected)) {
+    syncNow(true);
+  }
+}
+
 export function resetDemo() {
   emit(createDemoState());
 }
@@ -55,7 +90,7 @@ export function updateProfile(patch: Partial<Profile>) {
 }
 
 export function addRun(run: RunLog) {
-  emit({ ...state, runs: [run, ...state.runs] });
+  emit({ ...state, runs: [{ ...run, source: run.source ?? "manual" }, ...state.runs] });
 }
 
 export function addWorkout(workout: WorkoutLog) {
@@ -72,7 +107,7 @@ export function removeFood(id: string) {
 
 export function setSteps(date: string, steps: number) {
   const existing = state.steps.find((entry) => entry.date === date);
-  const nextSteps: StepLog[] = existing
+  const nextSteps = existing
     ? state.steps.map((entry) => (entry.date === date ? { ...entry, steps } : entry))
     : [{ date, steps }, ...state.steps];
   emit({ ...state, steps: nextSteps });
@@ -81,4 +116,44 @@ export function setSteps(date: string, steps: number) {
 export function bumpSteps(date: string, amount: number) {
   const current = state.steps.find((entry) => entry.date === date)?.steps ?? 0;
   setSteps(date, Math.max(0, current + amount));
+}
+
+export function setIntegrationConnected(id: IntegrationId, connected: boolean) {
+  const now = new Date().toISOString();
+  emit({
+    ...state,
+    integrations: state.integrations.map((item) =>
+      item.id === id
+        ? {
+            ...item,
+            connected,
+            connectedAt: connected ? now : undefined,
+            lastSyncAt: connected ? now : undefined,
+          }
+        : item,
+    ),
+    syncLog: connected
+      ? [
+          {
+            id: `sync_${Date.now()}`,
+            at: now,
+            source: id,
+            kind: "info" as const,
+            message: `Connected ${id.replace("-", " ")}.`,
+          },
+          ...state.syncLog,
+        ].slice(0, 40)
+      : state.syncLog,
+  });
+  if (connected) syncNow(false);
+}
+
+export function setAutoSync(enabled: boolean) {
+  emit({ ...state, autoSync: enabled });
+}
+
+export function syncNow(silent = false) {
+  const result = runSync(state);
+  emit(result.state);
+  return silent ? result : result;
 }

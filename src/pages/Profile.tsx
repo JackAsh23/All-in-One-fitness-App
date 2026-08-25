@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { Card } from "../components/Heatmap";
 import { defaultPriorities } from "../lib/scoring";
 import { resetDemo, updateProfile, useAppState } from "../lib/store";
@@ -32,6 +33,12 @@ export function ProfilePage() {
   return (
     <div className="space-y-4 animate-pop">
       <h2 className="text-2xl font-semibold">Profile</h2>
+      <Link
+        to="/integrations"
+        className="block rounded-3xl border border-step/40 bg-step/10 px-4 py-3 text-sm text-step"
+      >
+        Connected apps & auto-sync →
+      </Link>
       <Card>
         <p className="text-sm text-fog">
           The heatmap and score follow your priorities. A marathon block shouldn’t punish missed bench days.
@@ -95,7 +102,7 @@ export function ProfilePage() {
         Reload demo year
       </button>
       <p className="px-1 text-center text-xs text-fog">
-        Prototype of One Life — v0.1 tracker + v0.2 consistency heatmaps. Data stays in this browser.
+        One Life v0.3 — tracker, heatmaps, and simulated wearable sync. Data stays in this browser.
       </p>
     </div>
   );

@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { Card } from "../components/Heatmap";
 import { Sheet } from "../components/Sheet";
+import { formatSourceLabel } from "../lib/integrations";
 import { addDays, formatDuration, formatPace, formatShortDate, nowTime, todayISO, uid } from "../lib/dates";
 import { summarizeDay } from "../lib/scoring";
 import { addRun, useAppState } from "../lib/store";
@@ -74,7 +76,12 @@ export function RunPage() {
 
   return (
     <div className="space-y-4 animate-pop">
-      <h2 className="text-2xl font-semibold">Run</h2>
+      <div className="flex items-end justify-between">
+        <h2 className="text-2xl font-semibold">Run</h2>
+        <Link to="/integrations" className="text-sm text-step">
+          Sync apps
+        </Link>
+      </div>
 
       {live ? (
         <Card className="text-center">
@@ -142,7 +149,9 @@ export function RunPage() {
             <li key={run.id} className="flex items-center justify-between rounded-2xl bg-ink px-3 py-3">
               <div>
                 <p className="font-medium">{formatShortDate(run.date)}</p>
-                <p className="text-xs text-fog">{run.notes ?? "Outdoor run"}</p>
+                <p className="text-xs text-fog">
+                  {run.notes ?? "Outdoor run"} · {formatSourceLabel(run.source)}
+                </p>
               </div>
               <div className="text-right">
                 <p className="font-mono">{run.distanceKm.toFixed(2)} km</p>

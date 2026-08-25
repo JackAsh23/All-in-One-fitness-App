@@ -1,5 +1,24 @@
 export type MealType = "breakfast" | "lunch" | "snacks" | "dinner";
 
+export type IntegrationId = "apple-health" | "health-connect" | "strava" | "garmin";
+
+export type ActivitySource = "manual" | IntegrationId;
+
+export type Integration = {
+  id: IntegrationId;
+  connected: boolean;
+  connectedAt?: string;
+  lastSyncAt?: string;
+};
+
+export type SyncEvent = {
+  id: string;
+  at: string;
+  source: IntegrationId | "system";
+  kind: "steps" | "run" | "info" | "error";
+  message: string;
+};
+
 export type Priorities = {
   running: boolean;
   strength: boolean;
@@ -26,6 +45,8 @@ export type RunLog = {
   durationSec: number;
   calories: number;
   notes?: string;
+  source?: ActivitySource;
+  externalId?: string;
 };
 
 export type WorkoutSet = {
@@ -71,6 +92,9 @@ export type AppState = {
   workouts: WorkoutLog[];
   foods: FoodLog[];
   steps: StepLog[];
+  integrations: Integration[];
+  autoSync: boolean;
+  syncLog: SyncEvent[];
 };
 
 export type DayParts = {

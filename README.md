@@ -13,13 +13,23 @@ npm run dev
 
 Open [http://localhost:5173](http://localhost:5173). The first load seeds ~17 weeks of demo data in `localStorage` so the heatmaps look alive. Use **Reload demo year** on Profile to reset.
 
-## What’s in this prototype (v0.1 + v0.2)
+## What’s in this prototype
 
-- **Home** — today’s consistency score, streak, timeline, macros, steps
-- **Run** — live simulated run + quick log, weekly/monthly stats, history
-- **Workout** — templates (upper/lower/push/pull/full/calisthenics/custom), set logging, rest timer
-- **Nutrition** — calorie/macro bars, meal sections, Philippine food search (adobo, kwek-kwek, Jollibee, 7-Eleven…)
-- **Consistency** — unified heatmap plus run / workout / meal graphs
-- **Profile** — goals and score priorities (don’t punish a runner for skipping bench)
+### v0.1 — Personal tracker
+- **Home** — consistency score, streak, timeline, macros, steps
+- **Run** — simulated run + quick log, stats, history
+- **Workout** — templates, set logging, rest timer
+- **Nutrition** — macro bars, Filipino food search
+- **Consistency** — GitHub-style heatmaps
+- **Profile** — goals and score priorities
 
-Data never leaves the browser. No accounts, GPS hardware, or HealthKit yet — those are later roadmap phases.
+### v0.2 — Heatmaps & analytics
+- Monthly summaries, streak tracking, tap-a-day breakdown
+
+### v0.3 — Automation & integrations (simulated)
+- **Integrations** (`/integrations`) — Apple Health, Health Connect, Strava, Garmin
+- **Auto-sync** — background pull every ~90s for steps and imported runs
+- **Sync log** — see what was imported and when
+- Real HealthKit / Health Connect needs a native app later; this proves the central-dashboard UX
+
+Data never leaves the browser. No accounts yet.
