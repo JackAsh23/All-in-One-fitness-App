@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Images, Plus, Timer } from "lucide-react";
+import { ChevronDown, ChevronUp, Images, Plus, Timer } from "lucide-react";
 import { Card } from "../components/Heatmap";
 import { ExerciseArt } from "../components/ExerciseArt";
 import { Sheet } from "../components/Sheet";
@@ -27,6 +27,7 @@ export function WorkoutPage() {
   const [reps, setReps] = useState("10");
   const [activeExercise, setActiveExercise] = useState(0);
   const [planId, setPlanId] = useState(TRAINING_PLANS[0].id);
+  const [planOpen, setPlanOpen] = useState(true);
 
   useEffect(() => {
     if (rest <= 0) return;
@@ -279,56 +280,77 @@ export function WorkoutPage() {
       </Link>
 
       <Card>
-        <h3 className="mb-2 font-semibold">Training plan</h3>
-        <p className="mb-3 text-xs text-fog">{plan.blurb}</p>
-        <div className="mb-3 flex gap-2 overflow-x-auto no-scrollbar">
-          {TRAINING_PLANS.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => setPlanId(item.id)}
-              className={`shrink-0 rounded-full px-3 py-1.5 text-sm ${
-                planId === item.id ? "bg-lift text-ink" : "bg-ink text-fog"
-              }`}
-            >
-              {item.name}
-            </button>
-          ))}
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h3 className="font-semibold">Training plan</h3>
+            <p className="mt-1 text-xs text-fog">{plan.name}</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setPlanOpen((open) => !open)}
+            className="flex shrink-0 items-center gap-1 rounded-full bg-ink px-3 py-1.5 text-sm text-fog"
+          >
+            {planOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+            {planOpen ? "Hide" : "Show"}
+          </button>
         </div>
-        <div className="space-y-2">
-          {plan.days.map((day) => {
-            const isToday = day.weekday === todayDow;
-            return (
-              <button
-                key={`${plan.id}-${day.weekday}`}
-                type="button"
-                onClick={() => startPlanDay(day, plan)}
-                className={`w-full rounded-2xl px-3 py-3 text-left ${
-                  isToday ? "bg-lift/15 ring-1 ring-lift" : "bg-ink"
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <p className="font-medium">
-                    {day.label} · {day.title}
-                  </p>
-                  {isToday ? <span className="text-xs text-lift">Today</span> : null}
-                </div>
-                <p className="text-xs text-fog">{day.focus}</p>
-                <ul className="mt-2 space-y-1">
-                  {day.exercises.map((exercise) => (
-                    <li key={exercise.name} className="flex items-center gap-2 text-sm">
-                      <ExerciseArt name={exercise.name} size={36} className="rounded-xl" />
-                      <span className="flex-1">{exercise.name}</span>
-                      <span className="font-mono text-xs text-fog">
-                        {exercise.sets}×{exercise.reps}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </button>
-            );
-          })}
-        </div>
+        {planOpen ? (
+          <>
+            <p className="mt-3 mb-3 text-xs text-fog">{plan.blurb}</p>
+            <div className="mb-3 flex gap-2 overflow-x-auto no-scrollbar">
+              {TRAINING_PLANS.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setPlanId(item.id)}
+                  className={`shrink-0 rounded-full px-3 py-1.5 text-sm ${
+                    planId === item.id ? "bg-lift text-ink" : "bg-ink text-fog"
+                  }`}
+                >
+                  {item.name}
+                </button>
+              ))}
+            </div>
+            <div className="space-y-2">
+              {plan.days.map((day) => {
+                const isToday = day.weekday === todayDow;
+                return (
+                  <button
+                    key={`${plan.id}-${day.weekday}`}
+                    type="button"
+                    onClick={() => startPlanDay(day, plan)}
+                    className={`w-full rounded-2xl px-3 py-3 text-left ${
+                      isToday ? "bg-lift/15 ring-1 ring-lift" : "bg-ink"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <p className="font-medium">
+                        {day.label} · {day.title}
+                      </p>
+                      {isToday ? <span className="text-xs text-lift">Today</span> : null}
+                    </div>
+                    <p className="text-xs text-fog">{day.focus}</p>
+                    <ul className="mt-2 space-y-1">
+                      {day.exercises.map((exercise) => (
+                        <li key={exercise.name} className="flex items-center gap-2 text-sm">
+                          <ExerciseArt name={exercise.name} size={36} className="rounded-xl" />
+                          <span className="flex-1">{exercise.name}</span>
+                          <span className="font-mono text-xs text-fog">
+                            {exercise.sets}×{exercise.reps}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </button>
+                );
+              })}
+            </div>
+          </>
+        ) : (
+          <p className="mt-3 text-sm text-fog">
+            {todayDay ? `Today: ${todayDay.title} · ${todayDay.focus}` : "Rest day on this plan."}
+          </p>
+        )}
         {todayDay ? (
           <button
             type="button"
@@ -337,9 +359,9 @@ export function WorkoutPage() {
           >
             Start today · {todayDay.title}
           </button>
-        ) : (
+        ) : planOpen ? (
           <p className="mt-3 text-center text-sm text-fog">Rest day on this plan. Pick another session above.</p>
-        )}
+        ) : null}
       </Card>
 
       <div className="grid grid-cols-2 gap-3">
