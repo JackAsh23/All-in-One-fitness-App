@@ -26,7 +26,8 @@ export function StravaSetupCard() {
     <Card className="border-[#fc4c02]/30 bg-[#fc4c02]/5">
       <h3 className="font-semibold text-[#fc4c02]">Set up real Strava (5 min)</h3>
       <p className="mt-1 text-sm text-fog">
-        Demo connect works without this. For your actual Strava runs, complete these steps once.
+        Demo connect works without this. Real Strava needs a <strong className="text-snow">Strava subscription</strong> (Standard
+        Tier API) plus the steps below.
       </p>
 
       <ol className="mt-4 space-y-3 text-sm">

@@ -6,6 +6,22 @@ The app also shows this checklist on the Integrations screen until OAuth is conf
 
 ---
 
+## Strava subscription required
+
+Since **June 2026**, Strava requires a **paid Strava subscription** for **Standard Tier** API developers (personal / small apps, up to 10 users).
+
+| Your situation | What you need |
+|----------------|---------------|
+| **Already pay for Strava** | No extra API fee — your subscription covers Standard Tier access |
+| **Free Strava account** | Subscribe to Strava (~$12/mo) **or** skip real OAuth and use **demo connect** in the app |
+| **Commercial app (10k+ users)** | Apply for **Extended Access Tier** (different rules; no sub required for that tier) |
+
+For One Life as a **personal app** (just you): Standard Tier is enough. Go to [strava.com/settings/api](https://www.strava.com/settings/api) and **self-upgrade** to up to **10 athletes** in the API dashboard after creating your app.
+
+Official details: [Strava Developer Program update](https://communityhub.strava.com/insider-journal-9/an-update-to-our-developer-program-13428)
+
+---
+
 ## Step 1 — Strava API app (~2 min)
 
 1. Open **[strava.com/settings/api](https://www.strava.com/settings/api)**
