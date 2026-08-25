@@ -67,10 +67,14 @@ See [ROADMAP.md](ROADMAP.md) for v2 direction (Capacitor, real device APIs, clou
 
 ## Deploy
 
-GitHub Pages builds on every push to `main`:
+GitHub Pages builds on every push to `main`.
 
-1. Enable **Settings → Pages → Build and deployment → GitHub Actions**
-2. Push to `main` — workflow [`.github/workflows/pages.yml`](.github/workflows/pages.yml) runs `GITHUB_PAGES=true npm run build` and publishes `dist/`
-3. App is served at `/All-in-One-fitness-App/` (configured in [`vite.config.ts`](vite.config.ts))
+**First time only:** enable Pages in repo settings — see [`.github/DEPLOY_SETUP.md`](.github/DEPLOY_SETUP.md).
+
+1. **Settings → Pages → Build and deployment → GitHub Actions**
+2. Push to `main` (or re-run **Actions → Deploy Pages**)
+3. App is served at **https://jackash23.github.io/All-in-One-fitness-App/**
+
+The build uses base path `/All-in-One-fitness-App/` ([`vite.config.ts`](vite.config.ts)).
 
 Pull requests run build + tests via [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
