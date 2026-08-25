@@ -42,7 +42,7 @@ Done in this repo:
 | **Barcode scan** | Text input demo in [`src/components/BarcodeSheet.tsx`](src/components/BarcodeSheet.tsx) | `@capacitor-mlkit/barcode-scanning` or `@capacitor/barcode-scanner`; Open Food Facts lookup |
 | **Meal scan** | Demo recognizer in [`src/components/MealScanSheet.tsx`](src/components/MealScanSheet.tsx) | On-device vision (Core ML / ML Kit) or API with user consent |
 | **Exercise art** | Local `/wg/` + CDN fallback in [`src/lib/exerciseArt.ts`](src/lib/exerciseArt.ts) | Already production-ready; keep CC BY-SA attribution |
-| **Data** | `localStorage` key `one-life-fitness-v6` in [`src/lib/store.ts`](src/lib/store.ts) | IndexedDB for larger history on device; optional Supabase/Firebase sync layer |
+| **Data** | `localStorage` + IndexedDB in [`src/lib/store.ts`](src/lib/store.ts) | Optional cloud sync later |
 
 ### Integration implementation notes
 

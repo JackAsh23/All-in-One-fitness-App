@@ -189,7 +189,7 @@ export function ProfilePage() {
         Reload demo year
       </button>
       <p className="px-1 text-center text-xs text-fog">
-        One Life v{APP_VERSION} — backup, barcode lookup, GPS runs. Data stays on this device.
+        One Life v{APP_VERSION} — GPS runs, backup, barcode. Data stays on this device (IndexedDB).
       </p>
     </div>
   );

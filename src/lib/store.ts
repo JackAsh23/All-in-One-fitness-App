@@ -9,6 +9,7 @@ import { tokenToStravaAuth, exchangeStravaCode } from "./strava/config";
 import { macrosForGrams } from "./foods";
 import { nowTime, todayISO, uid } from "./dates";
 import { goalModeMeta } from "./goalModes";
+import { idbReadState, idbWriteState } from "./idb";
 import type {
   AppState,
   FoodLog,
@@ -29,6 +30,7 @@ const KEY = "one-life-fitness-v6";
 let state: AppState = load();
 const listeners = new Set<() => void>();
 let autoSyncTimer: number | undefined;
+let mutatedSinceLoad = false;
 
 function migrate(raw: Record<string, unknown>): AppState | null {
   if (!raw?.profile || !Array.isArray(raw.runs)) return null;
@@ -76,12 +78,20 @@ function load(): AppState {
 }
 
 function persist() {
-  localStorage.setItem(KEY, JSON.stringify(state));
+  try {
+    localStorage.setItem(KEY, JSON.stringify(state));
+  } catch {
+    /* Safari private mode / quota */
+  }
+  void idbWriteState(state).catch(() => {
+    /* IndexedDB unavailable */
+  });
   listeners.forEach((listener) => listener());
   ensureAutoSyncTimer();
 }
 
 function emit(next: AppState) {
+  mutatedSinceLoad = true;
   state = next;
   persist();
 }
@@ -116,8 +126,32 @@ export function useAppState(): AppState {
 
 export function initStore() {
   ensureAutoSyncTimer();
+  void hydrateFromIndexedDb();
   if (state.integrations.some((item) => item.connected)) {
-    syncNow(true);
+    void syncNow(true);
+  }
+}
+
+async function hydrateFromIndexedDb() {
+  try {
+    const raw = await idbReadState();
+    if (!raw || typeof raw !== "object") {
+      await idbWriteState(state);
+      return;
+    }
+    const migrated = migrate(raw as Record<string, unknown>);
+    if (!migrated) return;
+    if (mutatedSinceLoad) return;
+    state = migrated;
+    try {
+      localStorage.setItem(KEY, JSON.stringify(state));
+    } catch {
+      /* ignore */
+    }
+    listeners.forEach((listener) => listener());
+    ensureAutoSyncTimer();
+  } catch {
+    /* keep localStorage snapshot */
   }
 }
 
