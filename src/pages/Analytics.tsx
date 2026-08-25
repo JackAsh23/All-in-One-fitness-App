@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Card } from "../components/Heatmap";
+import { MonthCalendar } from "../components/MonthCalendar";
 import { SparkBars, SparkLine } from "../components/SparkBars";
 import {
   exercisePersonalRecords,
@@ -15,17 +16,27 @@ import {
   trainingLoad,
   weeklyRunKm,
   weeklyWorkoutVolume,
-  weightChange,
-  weightTrend,
+  weightStats,
 } from "../lib/analytics";
-import { useAppState } from "../lib/store";
+import { todayISO } from "../lib/dates";
+import { logWeight, useAppState } from "../lib/store";
 
-type Tab = "run" | "lift" | "eat";
+type Tab = "run" | "lift" | "eat" | "weight";
 
 function formatPaceSec(secPerKm: number): string {
   const m = Math.floor(secPerKm / 60);
   const s = Math.round(secPerKm % 60);
   return `${m}:${String(s).padStart(2, "0")}/km`;
+}
+
+function fmtDelta(n: number | null) {
+  if (n == null) return "—";
+  return `${n > 0 ? "+" : ""}${n} kg`;
+}
+
+function deltaClass(n: number | null) {
+  if (n == null) return "";
+  return n <= 0 ? "text-life" : "text-run";
 }
 
 export function AnalyticsPage() {
@@ -44,8 +55,9 @@ export function AnalyticsPage() {
   const liftTrend = strengthProgression(state.workouts, focusLift);
   const nutritionWeeks = nutritionWeeklyAverages(state);
   const adherence = macroAdherence(state);
-  const weights = weightTrend(state.weightLogs);
-  const weightDelta = weightChange(state.weightLogs);
+  const weight = weightStats(state);
+  const [weighIn, setWeighIn] = useState(String(weight.current ?? 76));
+  const [weighDate, setWeighDate] = useState(todayISO());
 
   return (
     <div className="space-y-4 animate-pop">
@@ -59,12 +71,13 @@ export function AnalyticsPage() {
         </Link>
       </div>
 
-      <div className="grid grid-cols-3 gap-2 rounded-2xl bg-card p-1">
+      <div className="grid grid-cols-4 gap-1 rounded-2xl bg-card p-1">
         {(
           [
             ["run", "Run"],
             ["lift", "Lift"],
             ["eat", "Eat"],
+            ["weight", "Weight"],
           ] as const
         ).map(([id, label]) => (
           <button
@@ -226,22 +239,90 @@ export function AnalyticsPage() {
             </div>
             <p className="mt-2 text-xs text-fog">{adherence.daysLogged} days logged in the window</p>
           </Card>
-          {weights.length > 0 ? (
-            <Card>
-              <h3 className="mb-3 font-semibold">Weight trend</h3>
-              <SparkBars data={weights} unit="kg" color="#5eead4" formatValue={(v) => v.toFixed(1)} />
-              {weightDelta ? (
-                <p className="mt-2 text-sm text-fog">
-                  Current {weightDelta.current}kg ·{" "}
-                  <span className={weightDelta.change <= 0 ? "text-life" : "text-run"}>
-                    {weightDelta.change >= 0 ? "+" : ""}
-                    {weightDelta.change}kg
-                  </span>{" "}
-                  over ~{weightDelta.weeks} weeks
+        </>
+      ) : null}
+
+      {tab === "weight" ? (
+        <>
+          <Card className="bg-gradient-to-br from-step/10 to-card">
+            <p className="text-xs uppercase tracking-[0.18em] text-step">Current</p>
+            <p className="font-mono text-5xl font-semibold">{weight.current ?? "—"}</p>
+            <p className="text-sm text-fog">kg</p>
+            <div className="mt-4 grid grid-cols-3 gap-2 text-center">
+              <div className="rounded-2xl bg-ink px-2 py-3">
+                <p className="text-[10px] uppercase text-fog">Start</p>
+                <p className="font-mono">{weight.start ?? "—"}</p>
+              </div>
+              <div className="rounded-2xl bg-ink px-2 py-3">
+                <p className="text-[10px] uppercase text-fog">Target</p>
+                <p className="font-mono">{weight.target ?? "—"}</p>
+              </div>
+              <div className="rounded-2xl bg-ink px-2 py-3">
+                <p className="text-[10px] uppercase text-fog">Left</p>
+                <p className="font-mono">
+                  {weight.remaining == null ? "—" : `${weight.remaining > 0 ? "" : "+"}${weight.remaining}`}
                 </p>
-              ) : null}
-            </Card>
-          ) : null}
+              </div>
+            </div>
+            <div className="mt-4 h-2 overflow-hidden rounded-full bg-ink">
+              <div className="h-full rounded-full bg-step" style={{ width: `${weight.progress}%` }} />
+            </div>
+            <p className="mt-2 text-xs text-fog">
+              {weight.lost == null ? "Log a weigh-in to start the trend." : `${weight.lost >= 0 ? "Down" : "Up"} ${Math.abs(weight.lost)} kg from start · ${weight.progress}% to target`}
+            </p>
+          </Card>
+          <Card>
+            <h3 className="mb-3 font-semibold">Trend</h3>
+            <SparkLine
+              points={weight.points}
+              color="#5eead4"
+              invertBetter
+              formatValue={(v) => `${v.toFixed(1)} kg`}
+            />
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <div className="rounded-2xl bg-ink px-3 py-3">
+                <p className="text-xs text-fog">7-day change</p>
+                <p className={`font-mono text-lg ${deltaClass(weight.weekChange)}`}>
+                  {fmtDelta(weight.weekChange)}
+                </p>
+              </div>
+              <div className="rounded-2xl bg-ink px-3 py-3">
+                <p className="text-xs text-fog">30-day change</p>
+                <p className={`font-mono text-lg ${deltaClass(weight.monthChange)}`}>
+                  {fmtDelta(weight.monthChange)}
+                </p>
+              </div>
+            </div>
+          </Card>
+          <Card>
+            <h3 className="mb-3 font-semibold">Weigh-in calendar</h3>
+            <MonthCalendar
+              selected={weighDate}
+              marked={weight.logs.map((entry) => entry.date)}
+              onSelect={setWeighDate}
+              accent="bg-step text-ink"
+            />
+            <div className="mt-3 flex gap-2">
+              <input
+                value={weighIn}
+                onChange={(event) => setWeighIn(event.target.value)}
+                className="flex-1 rounded-2xl border border-line bg-ink px-3 py-3"
+                inputMode="decimal"
+              />
+              <button
+                type="button"
+                className="rounded-2xl bg-step px-4 py-3 font-semibold text-ink"
+                onClick={() => logWeight(weighDate, Number(weighIn))}
+              >
+                Log kg
+              </button>
+            </div>
+            <p className="mt-2 text-xs text-fog">
+              {weight.logs.find((entry) => entry.date === weighDate)
+                ? `${weight.logs.find((entry) => entry.date === weighDate)?.kg} kg on this day`
+                : "No weigh-in on this day yet"}
+            </p>
+          </Card>
         </>
       ) : null}
     </div>

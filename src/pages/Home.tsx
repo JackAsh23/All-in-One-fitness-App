@@ -19,7 +19,7 @@ export function HomePage() {
       .filter((run) => run.date === today)
       .map((run) => ({
         time: run.time,
-        label: `${run.distanceKm.toFixed(1)} km Run${run.source && run.source !== "manual" ? ` · ${run.source.replace("-", " ")}` : ""}`,
+        label: `${run.distanceKm.toFixed(1)} km ${run.kind === "walk" ? "Walk" : "Run"}${run.source && run.source !== "manual" ? ` · ${run.source.replace("-", " ")}` : ""}`,
         icon: "run" as const,
       })),
     ...state.workouts

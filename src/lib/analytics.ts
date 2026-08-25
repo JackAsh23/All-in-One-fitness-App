@@ -326,3 +326,41 @@ export function weightChange(weights: { date: string; kg: number }[]) {
   const last = sorted[sorted.length - 1].kg;
   return { current: last, change: Math.round((last - first) * 10) / 10, weeks: Math.ceil(sorted.length / 7) };
 }
+
+export function weightStats(state: AppState) {
+  const logs = [...state.weightLogs].sort((a, b) => a.date.localeCompare(b.date));
+  const current = state.profile.currentWeightKg ?? logs[logs.length - 1]?.kg ?? null;
+  const start = state.profile.startWeightKg ?? logs[0]?.kg ?? current;
+  const target = state.profile.targetWeightKg ?? null;
+  const today = todayISO();
+  const weekAgo = addDays(today, -7);
+  const monthAgo = addDays(today, -30);
+  const atOrBefore = (iso: string) => {
+    const found = [...logs].reverse().find((entry) => entry.date <= iso);
+    return found?.kg;
+  };
+  const weekKg = atOrBefore(weekAgo);
+  const monthKg = atOrBefore(monthAgo);
+  const remaining = current != null && target != null ? Math.round((current - target) * 10) / 10 : null;
+  const lost = current != null && start != null ? Math.round((start - current) * 10) / 10 : null;
+  const span = start != null && target != null ? start - target : 0;
+  const progress =
+    span === 0 || current == null || start == null || target == null
+      ? 0
+      : Math.round((1 - (current - target) / span) * 100);
+  return {
+    logs,
+    current,
+    start,
+    target,
+    remaining,
+    lost,
+    progress: Math.max(0, Math.min(100, progress)),
+    weekChange: current != null && weekKg != null ? Math.round((current - weekKg) * 10) / 10 : null,
+    monthChange: current != null && monthKg != null ? Math.round((current - monthKg) * 10) / 10 : null,
+    points: logs.map((entry) => ({
+      label: formatShortDate(entry.date),
+      value: entry.kg,
+    })),
+  };
+}

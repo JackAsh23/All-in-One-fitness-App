@@ -38,6 +38,25 @@ export type Profile = {
   stepGoal: number;
   goalMode: GoalMode;
   priorities: Priorities;
+  startWeightKg?: number;
+  currentWeightKg?: number;
+  targetWeightKg?: number;
+};
+
+export type SportKind = "run" | "walk";
+
+export type GeoPoint = {
+  lat: number;
+  lng: number;
+};
+
+export type RoutePlan = {
+  id: string;
+  name: string;
+  kind: SportKind;
+  points: GeoPoint[];
+  distanceKm: number;
+  preset?: boolean;
 };
 
 export type RunLog = {
@@ -50,6 +69,9 @@ export type RunLog = {
   notes?: string;
   source?: ActivitySource;
   externalId?: string;
+  kind?: SportKind;
+  routeId?: string;
+  path?: GeoPoint[];
 };
 
 export type WorkoutSet = {
@@ -60,6 +82,8 @@ export type WorkoutSet = {
 export type WorkoutExercise = {
   name: string;
   sets: WorkoutSet[];
+  targetSets?: number;
+  targetReps?: string;
 };
 
 export type WorkoutLog = {
@@ -126,6 +150,7 @@ export type AppState = {
   favoriteFoodIds: string[];
   recentFoods: RecentFood[];
   savedMeals: SavedMeal[];
+  savedRoutes: RoutePlan[];
 };
 
 export type DayParts = {

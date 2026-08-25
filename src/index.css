@@ -21,6 +21,21 @@
   --color-heat-2: #006d32;
   --color-heat-3: #26a641;
   --color-heat-4: #39d353;
+  --color-run-heat-0: #161b22;
+  --color-run-heat-1: #3d1a12;
+  --color-run-heat-2: #7a2e1c;
+  --color-run-heat-3: #c44a2a;
+  --color-run-heat-4: #ff6b4a;
+  --color-lift-heat-0: #161b22;
+  --color-lift-heat-1: #152544;
+  --color-lift-heat-2: #2c4a86;
+  --color-lift-heat-3: #4e78d4;
+  --color-lift-heat-4: #7aa6ff;
+  --color-eat-heat-0: #161b22;
+  --color-eat-heat-1: #3d3010;
+  --color-eat-heat-2: #7a5f18;
+  --color-eat-heat-3: #c49a2e;
+  --color-eat-heat-4: #ffc857;
 }
 
 html,
@@ -74,4 +89,21 @@ textarea {
 
 .animate-pop {
   animation: pop-in 0.35s ease-out both;
+}
+
+.leaflet-container {
+  height: 100%;
+  width: 100%;
+  background: #0e1318;
+  font-family: inherit;
+}
+
+.leaflet-control-attribution {
+  font-size: 9px !important;
+  background: rgba(7, 9, 12, 0.72) !important;
+  color: #8b98a5 !important;
+}
+
+.leaflet-control-attribution a {
+  color: #5eead4 !important;
 }

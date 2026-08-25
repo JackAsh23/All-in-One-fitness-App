@@ -14,6 +14,9 @@ export function ProfilePage() {
   const [carbGoal, setCarbGoal] = useState(String(state.profile.carbGoal));
   const [fatGoal, setFatGoal] = useState(String(state.profile.fatGoal));
   const [stepGoal, setStepGoal] = useState(String(state.profile.stepGoal));
+  const [startWeight, setStartWeight] = useState(String(state.profile.startWeightKg ?? 78));
+  const [currentWeight, setCurrentWeight] = useState(String(state.profile.currentWeightKg ?? 76));
+  const [targetWeight, setTargetWeight] = useState(String(state.profile.targetWeightKg ?? 74));
   const [priorities, setPriorities] = useState<Priorities>(state.profile.priorities);
   const [saved, setSaved] = useState(false);
 
@@ -25,6 +28,9 @@ export function ProfilePage() {
       carbGoal: Number(carbGoal) || 220,
       fatGoal: Number(fatGoal) || 60,
       stepGoal: Number(stepGoal) || 10000,
+      startWeightKg: Number(startWeight) || undefined,
+      currentWeightKg: Number(currentWeight) || undefined,
+      targetWeightKg: Number(targetWeight) || undefined,
       priorities,
     });
     setSaved(true);
@@ -61,6 +67,9 @@ export function ProfilePage() {
           <Num label="Carbs (g)" value={carbGoal} onChange={setCarbGoal} />
           <Num label="Fat (g)" value={fatGoal} onChange={setFatGoal} />
           <Num label="Steps" value={stepGoal} onChange={setStepGoal} />
+          <Num label="Start kg" value={startWeight} onChange={setStartWeight} />
+          <Num label="Current kg" value={currentWeight} onChange={setCurrentWeight} />
+          <Num label="Target kg" value={targetWeight} onChange={setTargetWeight} />
         </div>
       </Card>
       <Card>
@@ -126,7 +135,7 @@ export function ProfilePage() {
         Reload demo year
       </button>
       <p className="px-1 text-center text-xs text-fog">
-        One Life v1.0 — Consistency OS. Data stays in this browser.
+        One Life v1.1 — GPS runs, training plans, smarter food log. Data stays in this browser.
       </p>
     </div>
   );

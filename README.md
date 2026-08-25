@@ -33,6 +33,14 @@ Open [http://localhost:5173](http://localhost:5173). The first load seeds ~17 we
 ### v0.4 — Smart nutrition
 - Barcode scan, recent/favorites, saved meals, portion steppers
 
+### v1.1 — Polish + GPS, plans, food log
+- **Home** — fuel rings no longer overlap kcal / protein labels
+- **Run** — Walk mode, GPS permission gate, route planner, live Strava-style map
+- **Lift** — weekly training plans with prescribed sets, workout-guide PNGs
+- **Eat** — floating + log button (Search, Barcode, Meal scan, Quick add), food calendar, weight + target
+- **Stats** — dedicated Weight tab with trend line, 7/30-day change, weigh-in calendar
+- **OS** — run / lift / eat heatmaps use distinct colors
+
 ### v1.0 — Consistency OS
 - **Goal modes** — Balanced, Marathon block, Strength focus, Cut phase
 - **Consistency OS hub** — dynamic score pillars, streak labels, monthly recaps

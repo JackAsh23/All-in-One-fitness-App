@@ -1,17 +1,26 @@
 import type { ReactNode } from "react";
 import { toISODate } from "../lib/dates";
 
-const LEVELS = ["bg-heat-0", "bg-heat-1", "bg-heat-2", "bg-heat-3", "bg-heat-4"] as const;
+export type HeatPalette = "life" | "run" | "lift" | "eat";
+
+const PALETTES: Record<HeatPalette, readonly string[]> = {
+  life: ["bg-heat-0", "bg-heat-1", "bg-heat-2", "bg-heat-3", "bg-heat-4"],
+  run: ["bg-run-heat-0", "bg-run-heat-1", "bg-run-heat-2", "bg-run-heat-3", "bg-run-heat-4"],
+  lift: ["bg-lift-heat-0", "bg-lift-heat-1", "bg-lift-heat-2", "bg-lift-heat-3", "bg-lift-heat-4"],
+  eat: ["bg-eat-heat-0", "bg-eat-heat-1", "bg-eat-heat-2", "bg-eat-heat-3", "bg-eat-heat-4"],
+};
 
 type HeatmapProps = {
   weeks: { date: string; level: 0 | 1 | 2 | 3 | 4 }[][];
   selected?: string;
   onSelect?: (date: string) => void;
+  palette?: HeatPalette;
 };
 
 const WEEKDAYS = ["M", "", "W", "", "F", "", ""];
 
-export function Heatmap({ weeks, selected, onSelect }: HeatmapProps) {
+export function Heatmap({ weeks, selected, onSelect, palette = "life" }: HeatmapProps) {
+  const levels = PALETTES[palette];
   return (
     <div className="overflow-x-auto no-scrollbar">
       <div className="flex gap-[3px] min-w-max">
@@ -30,7 +39,7 @@ export function Heatmap({ weeks, selected, onSelect }: HeatmapProps) {
                 type="button"
                 title={cell.date}
                 onClick={() => onSelect?.(cell.date)}
-                className={`size-[11px] rounded-[2px] ${LEVELS[cell.level]} ${
+                className={`size-[11px] rounded-[2px] ${levels[cell.level]} ${
                   selected === cell.date ? "ring-1 ring-snow" : ""
                 }`}
               />
@@ -42,13 +51,14 @@ export function Heatmap({ weeks, selected, onSelect }: HeatmapProps) {
   );
 }
 
-export function HeatLegend({ label }: { label: string }) {
+export function HeatLegend({ label, palette = "life" }: { label: string; palette?: HeatPalette }) {
+  const levels = PALETTES[palette];
   return (
     <div className="mt-3 flex items-center justify-between text-[11px] text-fog">
       <span>{label}</span>
       <div className="flex items-center gap-1">
         <span>Less</span>
-        {LEVELS.map((cls) => (
+        {levels.map((cls) => (
           <span key={cls} className={`size-2.5 rounded-[2px] ${cls}`} />
         ))}
         <span>More</span>

@@ -128,6 +128,7 @@ export function createDemoState(today = todayISO()): AppState {
     distanceKm: 5.2,
     durationSec: 32 * 60 + 41,
     calories: 318,
+    kind: "run",
     notes: "Easy aerobic. Felt smooth after km 2.",
     source: "apple-health",
   });
@@ -189,6 +190,21 @@ export function createDemoState(today = todayISO()): AppState {
       distanceKm: 3.2,
       durationSec: 21 * 60 + 10,
       calories: 198,
+      kind: "run",
+    });
+  }
+
+  const yesterday = addDays(today, -1);
+  if (!runs.some((run) => run.date === yesterday)) {
+    runs.push({
+      id: uid("walk"),
+      date: yesterday,
+      time: "18:10",
+      distanceKm: 2.4,
+      durationSec: 28 * 60,
+      calories: 108,
+      kind: "walk",
+      notes: "Evening walk",
     });
   }
 
@@ -200,6 +216,9 @@ export function createDemoState(today = todayISO()): AppState {
       carbGoal: 220,
       fatGoal: 60,
       stepGoal: 10000,
+      startWeightKg: 78.2,
+      currentWeightKg: weightLogs[weightLogs.length - 1]?.kg ?? 76.4,
+      targetWeightKg: 74,
       goalMode: "balanced",
       priorities: defaultPriorities(),
     },
@@ -208,6 +227,7 @@ export function createDemoState(today = todayISO()): AppState {
     foods,
     steps,
     weightLogs,
+    savedRoutes: [],
     integrations: defaultIntegrations(),
     autoSync: true,
     syncLog: [

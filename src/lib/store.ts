@@ -14,12 +14,13 @@ import type {
   IntegrationId,
   MealType,
   Profile,
+  RoutePlan,
   RunLog,
   SavedMeal,
   WorkoutLog,
 } from "./types";
 
-const KEY = "one-life-fitness-v5";
+const KEY = "one-life-fitness-v6";
 
 let state: AppState = load();
 const listeners = new Set<() => void>();
@@ -35,6 +36,9 @@ function migrate(raw: Record<string, unknown>): AppState | null {
       ...profile,
       goalMode: profile.goalMode ?? "balanced",
       priorities: profile.priorities ?? defaultPriorities(),
+      startWeightKg: profile.startWeightKg,
+      currentWeightKg: profile.currentWeightKg,
+      targetWeightKg: profile.targetWeightKg,
     },
     integrations: Array.isArray(base.integrations) ? base.integrations : defaultIntegrations(),
     autoSync: typeof base.autoSync === "boolean" ? base.autoSync : true,
@@ -42,12 +46,13 @@ function migrate(raw: Record<string, unknown>): AppState | null {
     favoriteFoodIds: Array.isArray(base.favoriteFoodIds) ? base.favoriteFoodIds : [],
     recentFoods: Array.isArray(base.recentFoods) ? base.recentFoods : [],
     savedMeals: Array.isArray(base.savedMeals) ? base.savedMeals : [],
+    savedRoutes: Array.isArray(base.savedRoutes) ? base.savedRoutes : [],
     weightLogs: Array.isArray(base.weightLogs) ? base.weightLogs : [],
   };
 }
 
 function load(): AppState {
-  for (const key of [KEY, "one-life-fitness-v4", "one-life-fitness-v3", "one-life-fitness-v2", "one-life-fitness-v1"]) {
+  for (const key of [KEY, "one-life-fitness-v5", "one-life-fitness-v4", "one-life-fitness-v3", "one-life-fitness-v2", "one-life-fitness-v1"]) {
     try {
       const raw = localStorage.getItem(key);
       if (!raw) continue;
@@ -212,7 +217,7 @@ export function removeSavedMeal(id: string) {
   emit({ ...state, savedMeals: state.savedMeals.filter((meal) => meal.id !== id) });
 }
 
-export function logSavedMeal(savedMealId: string, meal: MealType) {
+export function logSavedMeal(savedMealId: string, meal: MealType, date?: string) {
   const saved = state.savedMeals.find((item) => item.id === savedMealId);
   if (!saved) return;
   let next = state;
@@ -222,7 +227,7 @@ export function logSavedMeal(savedMealId: string, meal: MealType) {
     const macros = macrosForGrams(food, item.grams);
     const entry: FoodLog = {
       id: uid("food"),
-      date: todayISO(),
+      date: date ?? todayISO(),
       time: nowTime(),
       meal,
       name: food.name,
@@ -299,4 +304,57 @@ export function syncNow(silent = false) {
   const result = runSync(state);
   emit(result.state);
   return silent ? result : result;
+}
+
+export function saveRoute(route: RoutePlan) {
+  emit({
+    ...state,
+    savedRoutes: [route, ...state.savedRoutes.filter((item) => item.id !== route.id)],
+  });
+}
+
+export function removeRoute(id: string) {
+  emit({ ...state, savedRoutes: state.savedRoutes.filter((route) => route.id !== id) });
+}
+
+export function logWeight(date: string, kg: number) {
+  const rounded = Math.round(kg * 10) / 10;
+  const existing = state.weightLogs.find((entry) => entry.date === date);
+  const weightLogs = existing
+    ? state.weightLogs.map((entry) => (entry.date === date ? { ...entry, kg: rounded } : entry))
+    : [...state.weightLogs, { date, kg: rounded }].sort((a, b) => a.date.localeCompare(b.date));
+  const start = state.profile.startWeightKg ?? weightLogs[0]?.kg ?? rounded;
+  emit({
+    ...state,
+    weightLogs,
+    profile: {
+      ...state.profile,
+      currentWeightKg: rounded,
+      startWeightKg: start,
+    },
+  });
+}
+
+export function logQuickFood(input: {
+  name: string;
+  meal: MealType;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  date?: string;
+}) {
+  const entry: FoodLog = {
+    id: uid("food"),
+    date: input.date ?? todayISO(),
+    time: nowTime(),
+    meal: input.meal,
+    name: input.name.trim() || "Quick add",
+    grams: 1,
+    calories: Math.round(input.calories),
+    protein: input.protein,
+    carbs: input.carbs,
+    fat: input.fat,
+  };
+  emit({ ...state, foods: [entry, ...state.foods] });
 }

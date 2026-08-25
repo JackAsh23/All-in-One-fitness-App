@@ -163,18 +163,18 @@ export function ConsistencyPage() {
 
       <Card>
         <h3 className="mb-3 font-semibold">Running</h3>
-        <Heatmap weeks={runWeeks} selected={selected} onSelect={setSelected} />
-        <HeatLegend label="Distance intensity" />
+          <Heatmap weeks={runWeeks} selected={selected} onSelect={setSelected} palette="run" />
+          <HeatLegend label="Distance intensity" palette="run" />
       </Card>
       <Card>
         <h3 className="mb-3 font-semibold">Workout</h3>
-        <Heatmap weeks={liftWeeks} selected={selected} onSelect={setSelected} />
-        <HeatLegend label="Trained vs rest" />
+          <Heatmap weeks={liftWeeks} selected={selected} onSelect={setSelected} palette="lift" />
+          <HeatLegend label="Trained vs rest" palette="lift" />
       </Card>
       <Card>
         <h3 className="mb-3 font-semibold">Meal logging</h3>
-        <Heatmap weeks={mealWeeks} selected={selected} onSelect={setSelected} />
-        <HeatLegend label="Logged — not guilt" />
+          <Heatmap weeks={mealWeeks} selected={selected} onSelect={setSelected} palette="eat" />
+          <HeatLegend label="Logged — not guilt" palette="eat" />
       </Card>
     </div>
   );
