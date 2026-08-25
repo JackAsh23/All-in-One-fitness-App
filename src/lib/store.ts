@@ -16,7 +16,7 @@ import type {
   WorkoutLog,
 } from "./types";
 
-const KEY = "one-life-fitness-v3";
+const KEY = "one-life-fitness-v4";
 
 let state: AppState = load();
 const listeners = new Set<() => void>();
@@ -33,11 +33,12 @@ function migrate(raw: Record<string, unknown>): AppState | null {
     favoriteFoodIds: Array.isArray(base.favoriteFoodIds) ? base.favoriteFoodIds : [],
     recentFoods: Array.isArray(base.recentFoods) ? base.recentFoods : [],
     savedMeals: Array.isArray(base.savedMeals) ? base.savedMeals : [],
+    weightLogs: Array.isArray(base.weightLogs) ? base.weightLogs : [],
   };
 }
 
 function load(): AppState {
-  for (const key of [KEY, "one-life-fitness-v2", "one-life-fitness-v1"]) {
+  for (const key of [KEY, "one-life-fitness-v3", "one-life-fitness-v2", "one-life-fitness-v1"]) {
     try {
       const raw = localStorage.getItem(key);
       if (!raw) continue;

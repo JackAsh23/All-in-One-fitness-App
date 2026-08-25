@@ -31,10 +31,12 @@ Open [http://localhost:5173](http://localhost:5173). The first load seeds ~17 we
 - **Auto-sync** — background pull for steps and imported runs
 
 ### v0.4 — Smart nutrition
-- **Barcode scan** — Jollibee, McDo, 7-Eleven, Filipino staples
-- **Recent & favorites** — one-tap re-log and starred foods
-- **Saved meals** — log a whole plate; save today’s lunch as a template
-- **Portion stepper** — adjust grams on logged items
-- **Category filters** — Filipino, Restaurants, Convenience, etc.
+- Barcode scan, recent/favorites, saved meals, portion steppers
+
+### v0.5 — Advanced analytics
+- **Stats tab** — Run / Lift / Eat insights
+- **Running** — weekly mileage, pace trend, training load, PRs, race predictions
+- **Strength** — weekly volume, exercise PRs, muscle group frequency, progression charts
+- **Nutrition** — calorie & protein averages, macro adherence, weight trend
 
 Data never leaves the browser. No accounts yet.

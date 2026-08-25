@@ -105,12 +105,18 @@ export type StepLog = {
   steps: number;
 };
 
+export type WeightLog = {
+  date: string;
+  kg: number;
+};
+
 export type AppState = {
   profile: Profile;
   runs: RunLog[];
   workouts: WorkoutLog[];
   foods: FoodLog[];
   steps: StepLog[];
+  weightLogs: WeightLog[];
   integrations: Integration[];
   autoSync: boolean;
   syncLog: SyncEvent[];

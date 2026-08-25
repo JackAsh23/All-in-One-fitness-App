@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { Flame, PersonStanding, Salad, Dumbbell, Footprints } from "lucide-react";
+import { Flame, PersonStanding, Salad, Dumbbell, Footprints, BarChart3 } from "lucide-react";
 import { Card } from "../components/Heatmap";
 import { MacroBar, ProgressRing } from "../components/Progress";
 import { SyncBanner } from "../components/SyncBanner";
@@ -75,6 +75,14 @@ export function HomePage() {
       </Card>
 
       <div className="grid grid-cols-2 gap-3">
+        <StatTile
+          to="/analytics"
+          icon={<BarChart3 size={18} />}
+          label="Insights"
+          value={`${day.score}% score`}
+          sub="Pace, volume, macros"
+          color="text-life"
+        />
         <StatTile
           to="/run"
           icon={<PersonStanding size={18} />}

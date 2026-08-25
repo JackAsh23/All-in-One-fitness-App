@@ -2,7 +2,7 @@ import { addDays, todayISO, uid } from "./dates";
 import { macrosForGrams, FOODS } from "./foods";
 import { defaultIntegrations } from "./integrations";
 import { defaultPriorities } from "./scoring";
-import type { AppState, FoodLog, RunLog, StepLog, WorkoutLog } from "./types";
+import type { AppState, FoodLog, RunLog, StepLog, WeightLog, WorkoutLog } from "./types";
 
 function mulberry32(seed: number) {
   let a = seed >>> 0;
@@ -46,6 +46,15 @@ export function createDemoState(today = todayISO()): AppState {
   const workouts: WorkoutLog[] = [];
   const foods: FoodLog[] = [];
   const steps: StepLog[] = [];
+  const weightLogs: WeightLog[] = [];
+
+  for (let i = 84; i >= 0; i -= 7) {
+    const date = addDays(today, -i);
+    weightLogs.push({
+      date,
+      kg: Math.round((78.2 - i * 0.015 + rng() * 0.4) * 10) / 10,
+    });
+  }
 
   for (let i = 119; i >= 1; i -= 1) {
     const date = addDays(today, -i);
@@ -197,6 +206,7 @@ export function createDemoState(today = todayISO()): AppState {
     workouts,
     foods,
     steps,
+    weightLogs,
     integrations: defaultIntegrations(),
     autoSync: true,
     syncLog: [

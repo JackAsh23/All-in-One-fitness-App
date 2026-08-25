@@ -1,11 +1,12 @@
 import { NavLink, Outlet, useLocation } from "react-router-dom";
-import { Dumbbell, Flame, Home, Salad, UserRound, PersonStanding } from "lucide-react";
+import { BarChart3, Dumbbell, Flame, Home, Salad, UserRound, PersonStanding } from "lucide-react";
 
 const TABS = [
   { to: "/", label: "Home", icon: Home, end: true },
   { to: "/run", label: "Run", icon: PersonStanding },
-  { to: "/workout", label: "Workout", icon: Dumbbell },
-  { to: "/nutrition", label: "Nutrition", icon: Salad },
+  { to: "/workout", label: "Lift", icon: Dumbbell },
+  { to: "/nutrition", label: "Eat", icon: Salad },
+  { to: "/analytics", label: "Stats", icon: BarChart3 },
   { to: "/consistency", label: "Heat", icon: Flame },
 ];
 
@@ -35,7 +36,7 @@ export function AppShell() {
           <Outlet />
         </main>
         <nav className="fixed bottom-0 left-1/2 z-40 w-full max-w-[430px] -translate-x-1/2 border-t border-line/80 bg-ink/95 px-2 pb-[max(0.6rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur">
-          <div className="grid grid-cols-5">
+          <div className="grid grid-cols-6">
             {TABS.map((tab) => (
               <NavLink
                 key={tab.to}
