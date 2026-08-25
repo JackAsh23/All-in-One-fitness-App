@@ -1,66 +1,103 @@
-# Strava OAuth setup
+# Strava OAuth — setup checklist for JackAsh23
 
-One Life imports your Strava runs after you connect on **Integrations → Strava**.
+Connect your real Strava account in **Integrations → Connect with Strava**.
 
-Strava requires a **client secret** for token exchange, which cannot live in the public GitHub Pages app. Use a tiny proxy (Cloudflare Worker, free tier).
+The app also shows this checklist on the Integrations screen until OAuth is configured.
 
-## 1. Create a Strava API application
+---
 
-1. Go to [https://www.strava.com/settings/api](https://www.strava.com/settings/api)
-2. Create an app
-3. Set **Authorization Callback Domain** to `jackash23.github.io` (or `localhost` for dev)
-4. Note your **Client ID** and **Client Secret**
+## Step 1 — Strava API app (~2 min)
 
-## 2. Deploy the token proxy (Cloudflare Worker)
+1. Open **[strava.com/settings/api](https://www.strava.com/settings/api)**
+2. Click **Create an app** (or use an existing one)
+3. Fill in:
+
+| Field | Value |
+|-------|--------|
+| **Application name** | One Life Fitness |
+| **Category** | Training |
+| **Website** | `https://jackash23.github.io/All-in-One-fitness-App/` |
+| **Authorization Callback Domain** | `jackash23.github.io` |
+
+4. Save and copy:
+   - **Client ID** (number)
+   - **Client Secret** (click Show)
+
+> Strava uses the callback **domain** only. The full redirect URI is sent by One Life at connect time:
+> `https://jackash23.github.io/All-in-One-fitness-App/integrations`
+
+---
+
+## Step 2 — Cloudflare Worker proxy (~3 min)
+
+The client secret cannot ship in the public website. A free Cloudflare Worker exchanges the OAuth code for tokens.
+
+1. Create a free account at [dash.cloudflare.com](https://dash.cloudflare.com)
+2. On your PC, in the repo folder:
 
 ```bash
-npm install -g wrangler
-wrangler secret put STRAVA_CLIENT_ID
-wrangler secret put STRAVA_CLIENT_SECRET
-wrangler deploy workers/strava-token.js
+npm install
+npx wrangler login
+npx wrangler secret put STRAVA_CLIENT_ID      # paste Client ID
+npx wrangler secret put STRAVA_CLIENT_SECRET  # paste Client Secret
+npm run deploy:strava-worker
 ```
 
-Copy the worker URL (e.g. `https://one-life-strava.your-subdomain.workers.dev`).
+3. Copy the URL Wrangler prints, e.g. `https://one-life-strava.your-name.workers.dev`
 
-## 3. Configure the web app build
+---
 
-Add GitHub repository secrets (Settings → Secrets → Actions):
+## Step 3 — GitHub secrets (~1 min)
 
-| Secret | Value |
-|--------|--------|
-| `VITE_STRAVA_CLIENT_ID` | Your Strava Client ID |
-| `VITE_STRAVA_TOKEN_PROXY` | Worker URL from step 2 |
+1. Open **github.com/JackAsh23/All-in-One-fitness-App → Settings → Secrets and variables → Actions**
+2. Add **New repository secret** for each:
 
-Redeploy GitHub Pages (push to `main` or re-run **Deploy Pages**).
+| Name | Value |
+|------|--------|
+| `VITE_STRAVA_CLIENT_ID` | Strava Client ID |
+| `VITE_STRAVA_TOKEN_PROXY` | Worker URL from step 2 (no trailing slash) |
 
-For local dev, create `.env.local`:
+3. Go to **Actions → Deploy Pages → Re-run all jobs** (or push any commit to `main`)
+
+---
+
+## Step 4 — On your iPhone
+
+1. Wait for deploy (~1–2 min)
+2. Open the app → **Profile → Get latest app version**
+3. **Integrations** — orange setup card should disappear; **Connect with Strava** appears
+4. Authorize on Strava → tap **Sync now**
+5. Check **Run** tab for imported activities
+
+---
+
+## Local dev (optional)
+
+Create `.env.local` in the repo root:
 
 ```env
 VITE_STRAVA_CLIENT_ID=your_client_id
 VITE_STRAVA_TOKEN_PROXY=https://your-worker.workers.dev
 ```
 
-## 4. Register redirect URIs in Strava
+Run `npm run dev` and use redirect `http://localhost:5173/integrations` (add `localhost` as a second callback domain in Strava if needed).
 
-Add these **exact** redirect URIs in your Strava app settings:
-
-- `https://jackash23.github.io/All-in-One-fitness-App/integrations`
-- `http://localhost:5173/integrations` (local dev)
-
-## 5. Connect in the app
-
-1. Open **Integrations**
-2. Tap **Connect with Strava**
-3. Authorize on Strava — you return to One Life
-4. Tap **Sync now** to import recent runs
-
-Tokens are stored in `localStorage` on your device only.
+---
 
 ## Troubleshooting
 
-| Issue | Fix |
-|-------|-----|
-| “Strava is not configured” | Add secrets and redeploy |
-| Redirect mismatch | Callback URI must match exactly (including `/All-in-One-fitness-App/`) |
-| Token exchange failed | Check worker logs; verify client secret |
-| No runs imported | Strava activity must be Run/Walk/Hike type; check Sync log |
+| Problem | Fix |
+|---------|-----|
+| Still see orange setup card | Secrets missing or Pages not redeployed after adding secrets |
+| “Strava login failed (state mismatch)” | Try Connect again; don’t open Strava callback in a new tab |
+| “Token exchange failed” | Worker secrets wrong; run `wrangler tail` while connecting |
+| Redirect error on Strava | Callback domain must be `jackash23.github.io` |
+| Connect works, no runs | Activity must be Run/Walk/Hike; check Sync log on Integrations |
+
+---
+
+## Security notes
+
+- Client secret lives only in Cloudflare Worker secrets and GitHub Actions (for Client ID only in build)
+- Strava tokens stay in your phone’s `localStorage`
+- Disconnect Strava on Integrations to revoke local tokens

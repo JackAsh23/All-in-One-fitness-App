@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { RefreshCw } from "lucide-react";
 import { Card } from "../components/Heatmap";
+import { StravaSetupCard } from "../components/StravaSetupCard";
 import { INTEGRATION_CATALOG, integrationMeta } from "../lib/integrations";
 import { relativeSyncTime } from "../lib/sync";
 import {
@@ -79,6 +80,8 @@ export function IntegrationsPage() {
           <p className="text-sm text-run">{stravaError}</p>
         </Card>
       ) : null}
+
+      <StravaSetupCard />
 
       <Card>
         <p className="text-sm text-fog">
