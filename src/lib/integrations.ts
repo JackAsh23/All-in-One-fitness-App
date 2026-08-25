@@ -31,7 +31,7 @@ export const INTEGRATION_CATALOG: IntegrationMeta[] = [
     name: "Strava",
     platform: "Cross-platform",
     emoji: "🟠",
-    blurb: "Import runs automatically so you stop double-logging.",
+    blurb: "Prototype: demo connect imports sample runs. Real Strava OAuth is optional later.",
     syncs: ["runs"],
   },
   {

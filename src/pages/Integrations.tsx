@@ -85,8 +85,7 @@ export function IntegrationsPage() {
 
       <Card>
         <p className="text-sm text-fog">
-          One Life becomes your central dashboard. Connect wearables and running apps — Strava uses real OAuth when
-          configured; other sources stay simulated until native HealthKit ships.
+          Prototype mode: connect sources to simulate steps and imported runs. GPS logging on the Run tab is real.
         </p>
         <div className="mt-4 flex items-center justify-between rounded-2xl bg-ink px-3 py-3">
           <div>
@@ -158,14 +157,14 @@ export function IntegrationsPage() {
                     on ? "bg-card text-fog" : "bg-step text-ink"
                   }`}
                 >
-                  {on ? "Disconnect" : "Connect"}
+                  {on ? "Disconnect" : isStrava && !stravaLive ? "Demo connect" : "Connect"}
                 </button>
               )}
             </div>
             <p className="mt-2 text-sm text-fog">{meta.blurb}</p>
             {isStrava && !stravaLive ? (
               <p className="mt-2 text-xs text-fog">
-                Real Strava OAuth needs API keys — see{" "}
+                Demo connect imports sample runs. Real OAuth (paid Strava API) is documented in{" "}
                 <a
                   href="https://github.com/JackAsh23/All-in-One-fitness-App/blob/main/docs/STRAVA.md"
                   className="text-life underline"
@@ -173,8 +172,8 @@ export function IntegrationsPage() {
                   rel="noreferrer"
                 >
                   docs/STRAVA.md
-                </a>
-                . Demo connect imports sample runs.
+                </a>{" "}
+                for later.
               </p>
             ) : null}
             <p className="mt-2 text-xs text-fog">

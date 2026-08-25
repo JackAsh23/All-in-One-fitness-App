@@ -1,8 +1,8 @@
-# Strava OAuth — setup checklist for JackAsh23
+# Strava OAuth — optional (later)
 
-Connect your real Strava account in **Integrations → Connect with Strava**.
+**Prototype default:** tap **Connect** on Integrations → Strava. That is **demo connect** — it imports sample runs, no Strava subscription required.
 
-The app also shows this checklist on the Integrations screen until OAuth is configured.
+Real OAuth is parked until you want it. Strava now requires a **paid subscription** for Standard Tier API access.
 
 ---
 
