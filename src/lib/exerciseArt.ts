@@ -59,10 +59,18 @@ export function exerciseSlug(name: string): string | null {
   return GUIDE_EXERCISES.some((item) => item.slug === slug) ? slug : null;
 }
 
+export function slugImageUrl(slug: string, frame: 1 | 2 | 3 = 2) {
+  return `${import.meta.env.BASE_URL}wg/${slug}/frame-${frame}.png`;
+}
+
+export function slugImageCdnUrl(slug: string, frame: 1 | 2 | 3 = 2) {
+  return `${CDN}/assets/${slug}/frame-${frame}.png`;
+}
+
 export function exerciseImageUrl(name: string, frame: 1 | 2 | 3 = 2): string | null {
   const slug = exerciseSlug(name);
   if (!slug) return null;
-  return `${CDN}/assets/${slug}/frame-${frame}.png`;
+  return slugImageUrl(slug, frame);
 }
 
 export function searchGuideExercises(
@@ -84,10 +92,6 @@ export function searchGuideExercises(
     );
   });
   return limit ? hits.slice(0, limit) : hits;
-}
-
-export function slugImageUrl(slug: string, frame: 1 | 2 | 3 = 2) {
-  return `${CDN}/assets/${slug}/frame-${frame}.png`;
 }
 
 export const GUIDE_MUSCLES = [...new Set(GUIDE_EXERCISES.map((item) => item.muscle))].sort();

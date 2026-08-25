@@ -26,7 +26,7 @@ export function ExerciseGalleryPage() {
   const visible = hits.slice(0, shown);
 
   return (
-    <div className="space-y-4 animate-pop">
+    <div className="w-full min-w-0 space-y-4 animate-pop">
       <div className="flex items-end justify-between">
         <div>
           <p className="text-xs uppercase tracking-[0.18em] text-lift">Workout Guide</p>
@@ -51,13 +51,13 @@ export function ExerciseGalleryPage() {
         className="w-full rounded-2xl border border-line bg-card px-3 py-3 outline-none"
       />
 
-      <div className="flex gap-2 overflow-x-auto no-scrollbar">
+      <div className="flex w-full min-w-0 gap-2 overflow-x-auto no-scrollbar">
         <Chip active={muscle === null} onClick={() => setMuscle(null)} label="All muscles" />
         {GUIDE_MUSCLES.map((item) => (
           <Chip key={item} active={muscle === item} onClick={() => { setMuscle(item); setShown(30); }} label={item} />
         ))}
       </div>
-      <div className="flex gap-2 overflow-x-auto no-scrollbar">
+      <div className="flex w-full min-w-0 gap-2 overflow-x-auto no-scrollbar">
         <Chip active={equipment === null} onClick={() => setEquipment(null)} label="All gear" />
         {GUIDE_EQUIPMENT.map((item) => (
           <Chip
@@ -73,17 +73,17 @@ export function ExerciseGalleryPage() {
       </div>
 
       <p className="text-xs text-fog">{hits.length} matches</p>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid w-full grid-cols-2 gap-3">
         {visible.map((item) => (
           <button
             key={item.slug}
             type="button"
             onClick={() => setSelected(item)}
-            className="rounded-3xl border border-line bg-card p-3 text-left"
+            className="min-w-0 w-full rounded-3xl border border-line bg-card p-2.5 text-left"
           >
-            <ExerciseArt name={item.name} slug={item.slug} size={128} className="mx-auto" />
+            <ExerciseArt name={item.name} slug={item.slug} fill />
             <p className="mt-2 truncate font-medium">{item.name}</p>
-            <p className="text-xs text-fog">
+            <p className="truncate text-xs text-fog">
               {item.muscle} · {item.equipment}
             </p>
           </button>
@@ -108,11 +108,11 @@ export function ExerciseGalleryPage() {
                   key={frame}
                   src={slugImageUrl(selected.slug, frame)}
                   alt={`${selected.name} frame ${frame}`}
-                  className="aspect-square w-full rounded-2xl bg-white object-contain p-1"
+                  className="aspect-square w-full rounded-2xl bg-[#0b0f14] object-contain"
                 />
               ))}
             </div>
-            <ExerciseArt name={selected.name} slug={selected.slug} size={220} animate className="mx-auto" />
+            <ExerciseArt name={selected.name} slug={selected.slug} size={220} animate fill className="mx-auto max-w-[220px]" />
             <p className="text-sm text-fog">
               {selected.muscle} · {selected.equipment} · 3 frames
             </p>
