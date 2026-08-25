@@ -30,15 +30,17 @@ function migrate(raw: Record<string, unknown>): AppState | null {
   if (!raw?.profile || !Array.isArray(raw.runs)) return null;
   const base = raw as unknown as AppState;
   const profile = base.profile as Profile;
+  const weightLogs = Array.isArray(base.weightLogs) ? base.weightLogs : [];
+  const sortedWeights = [...weightLogs].sort((a, b) => a.date.localeCompare(b.date));
   return {
     ...base,
     profile: {
       ...profile,
       goalMode: profile.goalMode ?? "balanced",
       priorities: profile.priorities ?? defaultPriorities(),
-      startWeightKg: profile.startWeightKg,
-      currentWeightKg: profile.currentWeightKg,
-      targetWeightKg: profile.targetWeightKg,
+      startWeightKg: profile.startWeightKg ?? sortedWeights[0]?.kg,
+      currentWeightKg: profile.currentWeightKg ?? sortedWeights[sortedWeights.length - 1]?.kg,
+      targetWeightKg: profile.targetWeightKg ?? (sortedWeights[0] ? Math.round((sortedWeights[0].kg - 4) * 10) / 10 : 74),
     },
     integrations: Array.isArray(base.integrations) ? base.integrations : defaultIntegrations(),
     autoSync: typeof base.autoSync === "boolean" ? base.autoSync : true,
