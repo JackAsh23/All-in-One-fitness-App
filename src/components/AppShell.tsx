@@ -19,15 +19,16 @@ const NESTED: Record<string, { parent: string; title: string }> = {
 
 export function AppShell() {
   const location = useLocation();
-  const isProfile = location.pathname === "/profile";
-  const nested = NESTED[location.pathname];
+  const path = location.pathname.replace(/\/+$/, "") || "/";
+  const isProfile = path === "/profile";
+  const nested = NESTED[path];
 
   return (
     <div className="min-h-dvh bg-[radial-gradient(circle_at_top,#14301f_0%,#05070a_42%)]">
       <div className="mx-auto flex min-h-dvh w-full max-w-[430px] flex-col overflow-x-hidden bg-ink shadow-[0_0_80px_rgba(62,224,127,0.08)]">
         <header className="flex items-center justify-between gap-3 px-5 pb-3 pt-[max(1rem,env(safe-area-inset-top))]">
-          <div className="flex min-w-0 items-center gap-2">
-            {nested ? <BackButton fallback={nested.parent} /> : null}
+          <div className="flex min-w-0 items-center gap-3">
+            {nested ? <BackButton fallback={nested.parent} iconOnly /> : null}
             <div className="min-w-0">
               <p className="text-[11px] uppercase tracking-[0.22em] text-life">One Life</p>
               <h1 className="text-lg font-semibold leading-tight">{nested?.title ?? "Fitness OS"}</h1>
@@ -44,9 +45,10 @@ export function AppShell() {
           </NavLink>
         </header>
         <main className="relative min-w-0 flex-1 overflow-x-hidden overflow-y-auto px-4 pb-28">
+          {nested ? <BackButton fallback={nested.parent} className="mb-4 w-full" /> : null}
           <Outlet />
         </main>
-        {location.pathname === "/nutrition" ? (
+        {path === "/nutrition" ? (
           <button
             type="button"
             onClick={() => window.dispatchEvent(new Event("one-life-log-food"))}

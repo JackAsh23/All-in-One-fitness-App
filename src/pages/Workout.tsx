@@ -128,23 +128,24 @@ export function WorkoutPage() {
     const current = session.exercises[activeExercise];
     return (
       <div className="space-y-4 animate-pop">
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex min-w-0 items-center gap-2">
-            <BackButton
-              fallback="/workout"
-              onClick={() => {
-                setSession(null);
-                setRest(0);
-              }}
-            />
+        <div className="space-y-3">
+          <BackButton
+            fallback="/workout"
+            className="w-full"
+            onClick={() => {
+              setSession(null);
+              setRest(0);
+            }}
+          />
+          <div className="flex items-center justify-between gap-2">
             <div className="min-w-0">
               <p className="text-xs uppercase tracking-[0.18em] text-lift">Live session</p>
               <h2 className="truncate text-2xl font-semibold">{session.template}</h2>
             </div>
+            <button type="button" onClick={finish} className="shrink-0 rounded-full bg-life px-4 py-2 text-sm font-semibold text-ink">
+              Finish
+            </button>
           </div>
-          <button type="button" onClick={finish} className="shrink-0 rounded-full bg-life px-4 py-2 text-sm font-semibold text-ink">
-            Finish
-          </button>
         </div>
 
         {rest > 0 ? (

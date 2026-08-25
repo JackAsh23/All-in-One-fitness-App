@@ -36,12 +36,12 @@ export function BackButton({
       onClick={goBack}
       className={
         iconOnly
-          ? `grid size-10 shrink-0 place-items-center rounded-full border border-line bg-card text-fog ${className}`
-          : `inline-flex shrink-0 items-center gap-0.5 rounded-full border border-line bg-card px-2.5 py-1.5 text-sm text-fog ${className}`
+          ? `grid size-11 shrink-0 place-items-center rounded-full bg-life text-ink shadow-[0_8px_20px_rgba(62,224,127,0.4)] ${className}`
+          : `flex min-h-12 shrink-0 items-center justify-center gap-1 rounded-2xl bg-life px-4 text-base font-semibold text-ink shadow-[0_8px_20px_rgba(62,224,127,0.35)] ${className}`
       }
       aria-label={label}
     >
-      <ChevronLeft size={18} />
+      <ChevronLeft size={iconOnly ? 24 : 22} strokeWidth={2.75} />
       {iconOnly ? null : <span>{label}</span>}
     </button>
   );

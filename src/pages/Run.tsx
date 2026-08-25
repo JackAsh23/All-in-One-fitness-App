@@ -175,7 +175,7 @@ export function RunPage() {
               follow
               className="h-full rounded-none"
             />
-            <div className="absolute left-4 top-[max(0.75rem,env(safe-area-inset-top))] z-10">
+            <div className="pointer-events-auto absolute left-4 top-[max(0.75rem,env(safe-area-inset-top))] z-[2000]">
               <BackButton fallback="/run" onClick={stopLive} />
             </div>
           </div>
@@ -223,7 +223,7 @@ export function RunPage() {
               onAddPoint={addPlanPoint}
               className="h-full rounded-none"
             />
-            <div className="absolute left-4 top-[max(0.75rem,env(safe-area-inset-top))] z-10">
+            <div className="pointer-events-auto absolute left-4 top-[max(0.75rem,env(safe-area-inset-top))] z-[2000]">
               <BackButton
                 fallback="/run"
                 onClick={() => {
@@ -266,7 +266,7 @@ export function RunPage() {
   if (phase === "gps") {
     return (
       <div className="space-y-4 animate-pop">
-        <BackButton fallback="/run" onClick={() => setPhase("home")} />
+        <BackButton fallback="/run" className="w-full" onClick={() => setPhase("home")} />
         <Card className="text-center">
           <p className="text-xs uppercase tracking-[0.2em] text-run">GPS required</p>
           <h2 className="mt-2 text-2xl font-semibold">Allow location to track this {kind}</h2>

@@ -55,11 +55,9 @@ export function WrappedPage() {
   return (
     <div className="min-h-dvh bg-ink">
       <div className="mx-auto max-w-[430px]">
-        <div className="flex items-center justify-between gap-3 px-5 pt-[max(1rem,env(safe-area-inset-top))]">
-          <div className="flex min-w-0 items-center gap-2">
-            <BackButton fallback="/consistency" />
-            <p className="text-xs uppercase tracking-[0.2em] text-life">One Life Wrapped</p>
-          </div>
+        <div className="px-4 pt-[max(1rem,env(safe-area-inset-top))]">
+          <BackButton fallback="/consistency" className="w-full" />
+          <p className="mt-3 text-xs uppercase tracking-[0.2em] text-life">One Life Wrapped</p>
         </div>
         <div className="space-y-4 px-4 pb-10 pt-2">
           {slides.map((slide, index) => (
