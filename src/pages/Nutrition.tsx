@@ -1,5 +1,4 @@
-import { useMemo, useState, type ReactNode } from "react";
-import { createPortal } from "react-dom";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Barcode, Camera, Plus, ScanLine, Search, Star, Weight } from "lucide-react";
 import { BarcodeSheet } from "../components/BarcodeSheet";
 import { Card } from "../components/Heatmap";
@@ -70,6 +69,12 @@ export function NutritionPage() {
   const loggedDates = useMemo(() => new Set(state.foods.map((food) => food.date)), [state.foods]);
   const weights = weightStats(state);
   const isToday = viewDate === today;
+
+  useEffect(() => {
+    const openLog = () => setChooser("menu");
+    window.addEventListener("one-life-log-food", openLog);
+    return () => window.removeEventListener("one-life-log-food", openLog);
+  }, []);
 
   const results = useMemo(() => {
     const base = category ? FOODS.filter((food) => food.category === category) : FOODS;
@@ -353,22 +358,6 @@ export function NutritionPage() {
           </Card>
         );
       })}
-
-      {createPortal(
-        <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[70] flex justify-center">
-          <div className="relative h-[calc(5.4rem+env(safe-area-inset-bottom,0px))] w-full max-w-[430px]">
-            <button
-              type="button"
-              onClick={() => setChooser("menu")}
-              className="pointer-events-auto absolute right-4 top-0 grid size-14 place-items-center rounded-full bg-eat text-ink shadow-[0_10px_28px_rgba(255,200,87,0.55)]"
-              aria-label="Log food"
-            >
-              <Plus size={28} strokeWidth={2.75} />
-            </button>
-          </div>
-        </div>,
-        document.body,
-      )}
 
       <Sheet open={chooser === "menu"} title="Log food" onClose={() => setChooser("closed")}>
         <div className="grid grid-cols-2 gap-3">

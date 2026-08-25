@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useLocation } from "react-router-dom";
-import { BarChart3, Dumbbell, Flame, Home, Salad, UserRound, PersonStanding } from "lucide-react";
+import { BarChart3, Dumbbell, Flame, Home, Plus, Salad, UserRound, PersonStanding } from "lucide-react";
 
 const TABS = [
   { to: "/", label: "Home", icon: Home, end: true },
@@ -32,9 +32,23 @@ export function AppShell() {
             <UserRound size={18} />
           </NavLink>
         </header>
-        <main className="flex-1 overflow-y-auto px-4 pb-28">
+        <main className="relative flex-1 overflow-y-auto px-4 pb-28">
           <Outlet />
         </main>
+        {location.pathname === "/nutrition" ? (
+          <button
+            type="button"
+            onClick={() => window.dispatchEvent(new Event("one-life-log-food"))}
+            className="fixed z-[45] grid size-16 place-items-center rounded-full bg-eat text-ink shadow-[0_10px_28px_rgba(255,200,87,0.55)]"
+            style={{
+              right: "max(1rem, calc(50% - 215px + 1rem))",
+              bottom: "calc(4.75rem + env(safe-area-inset-bottom, 0px))",
+            }}
+            aria-label="Log food"
+          >
+            <Plus size={30} strokeWidth={2.75} />
+          </button>
+        ) : null}
         <nav className="fixed bottom-0 left-1/2 z-40 w-full max-w-[430px] -translate-x-1/2 border-t border-line/80 bg-ink/95 px-2 pb-[max(0.6rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur">
           <div className="grid grid-cols-6">
             {TABS.map((tab) => (
