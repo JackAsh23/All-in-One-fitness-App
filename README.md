@@ -65,6 +65,24 @@ Data never leaves the browser. No accounts yet.
 
 See [ROADMAP.md](ROADMAP.md) for v2 direction (Capacitor, real device APIs, cloud sync).
 
+## Native app (Capacitor)
+
+The same React UI runs in iOS and Android shells via [Capacitor](https://capacitorjs.com/).
+
+```bash
+npm run cap:sync      # build for native + copy dist/ into android/ and ios/
+npm run cap:ios       # open Xcode (macOS)
+npm run cap:android   # open Android Studio
+```
+
+Full setup, live reload, and TestFlight / Play internal testing: **[docs/NATIVE.md](docs/NATIVE.md)**.
+
+| Build | Command |
+|-------|---------|
+| Local web | `npm run build` |
+| GitHub Pages | `npm run build:pages` |
+| Capacitor | `npm run build:cap` or `npm run cap:sync` |
+
 ## Deploy
 
 GitHub Pages builds on every push to `main`.

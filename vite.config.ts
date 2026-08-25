@@ -33,7 +33,12 @@ function workoutGuideAssets(): Plugin {
 }
 
 export default defineConfig({
-  base: process.env.GITHUB_PAGES === "true" ? "/All-in-One-fitness-App/" : "/",
+  base:
+    process.env.GITHUB_PAGES === "true"
+      ? "/All-in-One-fitness-App/"
+      : process.env.CAPACITOR === "true"
+        ? "./"
+        : "/",
   plugins: [react(), tailwindcss(), workoutGuideAssets()],
   resolve: {
     alias: {
