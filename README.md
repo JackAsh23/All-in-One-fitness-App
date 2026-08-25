@@ -36,8 +36,8 @@ Open [http://localhost:5173](http://localhost:5173). The first load seeds ~17 we
 ### v1.1 — Polish + GPS, plans, food log
 - **Home** — fuel rings no longer overlap kcal / protein labels
 - **Run** — Walk mode, GPS permission gate, route planner, live Strava-style map
-- **Lift** — weekly training plans with prescribed sets, workout-guide PNGs
-- **Eat** — floating + log button (Search, Barcode, Meal scan, Quick add), food calendar, weight + target
+- **Lift** — weekly training plans, **exercise gallery** (302 PNGs from `@bryllim/workout-guide`)
+- **Eat** — **Log food** at the top, meal **+** buttons, floating **+**, four modes: Search, Barcode Scan, Meal Scan, Quick ADD
 - **Stats** — dedicated Weight tab with trend line, 7/30-day change, weigh-in calendar
 - **OS** — run / lift / eat heatmaps use distinct colors
 

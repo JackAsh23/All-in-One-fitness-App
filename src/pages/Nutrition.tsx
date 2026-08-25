@@ -1,4 +1,5 @@
 import { useMemo, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { Barcode, Camera, Plus, ScanLine, Search, Star, Weight } from "lucide-react";
 import { BarcodeSheet } from "../components/BarcodeSheet";
 import { Card } from "../components/Heatmap";
@@ -117,13 +118,33 @@ export function NutritionPage() {
   }
 
   return (
-    <div className="space-y-4 animate-pop pb-16">
+    <div className="space-y-4 animate-pop pb-8">
       <div className="flex items-end justify-between">
         <div>
           <p className="text-xs uppercase tracking-[0.18em] text-eat">Fuel</p>
           <h2 className="text-2xl font-semibold">Nutrition</h2>
         </div>
         <p className="text-xs text-fog">{isToday ? "Today" : viewDate}</p>
+      </div>
+
+      <button
+        type="button"
+        onClick={() => setChooser("menu")}
+        className="flex w-full items-center justify-center gap-2 rounded-3xl bg-eat py-4 text-lg font-semibold text-ink"
+      >
+        <Plus size={22} strokeWidth={2.5} />
+        Log food
+      </button>
+
+      <div className="grid grid-cols-2 gap-3">
+        <LogMode icon={<Search size={18} />} label="Search" onClick={() => setChooser("search")} />
+        <LogMode
+          icon={<ScanLine size={18} />}
+          label="Barcode Scan"
+          onClick={() => setBarcodeOpen(true)}
+        />
+        <LogMode icon={<Camera size={18} />} label="Meal Scan" onClick={() => setScanOpen(true)} />
+        <LogMode icon={<Plus size={18} />} label="Quick ADD" onClick={() => setChooser("quick")} />
       </div>
 
       <Card>
@@ -278,7 +299,20 @@ export function NutritionPage() {
               <h3 className="font-semibold">
                 {section.emoji} {section.label}
               </h3>
-              <span className="font-mono text-sm text-fog">{Math.round(kcal)} kcal</span>
+              <div className="flex items-center gap-2">
+                <span className="font-mono text-sm text-fog">{Math.round(kcal)} kcal</span>
+                <button
+                  type="button"
+                  aria-label={`Log ${section.label}`}
+                  onClick={() => {
+                    setMeal(section.id);
+                    setChooser("menu");
+                  }}
+                  className="grid size-8 place-items-center rounded-full bg-eat text-ink"
+                >
+                  <Plus size={16} />
+                </button>
+              </div>
             </div>
             {items.length === 0 ? (
               <p className="text-sm text-fog">Nothing logged.</p>
@@ -320,21 +354,28 @@ export function NutritionPage() {
         );
       })}
 
-      <button
-        type="button"
-        onClick={() => setChooser("menu")}
-        className="fixed bottom-[5.75rem] right-[max(1rem,calc(50vw-215px+1rem))] z-30 grid size-14 place-items-center rounded-full bg-eat text-ink shadow-lg"
-        aria-label="Log food"
-      >
-        <Plus size={26} />
-      </button>
+      {createPortal(
+        <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[70] flex justify-center">
+          <div className="relative h-[calc(5.4rem+env(safe-area-inset-bottom,0px))] w-full max-w-[430px]">
+            <button
+              type="button"
+              onClick={() => setChooser("menu")}
+              className="pointer-events-auto absolute right-4 top-0 grid size-14 place-items-center rounded-full bg-eat text-ink shadow-[0_10px_28px_rgba(255,200,87,0.55)]"
+              aria-label="Log food"
+            >
+              <Plus size={28} strokeWidth={2.75} />
+            </button>
+          </div>
+        </div>,
+        document.body,
+      )}
 
       <Sheet open={chooser === "menu"} title="Log food" onClose={() => setChooser("closed")}>
         <div className="grid grid-cols-2 gap-3">
           <LogMode icon={<Search size={18} />} label="Search" onClick={() => setChooser("search")} />
           <LogMode
             icon={<ScanLine size={18} />}
-            label="Barcode scan"
+            label="Barcode Scan"
             onClick={() => {
               setChooser("closed");
               setBarcodeOpen(true);
@@ -342,13 +383,13 @@ export function NutritionPage() {
           />
           <LogMode
             icon={<Camera size={18} />}
-            label="Meal scan"
+            label="Meal Scan"
             onClick={() => {
               setChooser("closed");
               setScanOpen(true);
             }}
           />
-          <LogMode icon={<Plus size={18} />} label="Quick add" onClick={() => setChooser("quick")} />
+          <LogMode icon={<Plus size={18} />} label="Quick ADD" onClick={() => setChooser("quick")} />
         </div>
       </Sheet>
 

@@ -8,6 +8,7 @@ import { IntegrationsPage } from "./pages/Integrations";
 import { ProfilePage } from "./pages/Profile";
 import { RunPage } from "./pages/Run";
 import { WorkoutPage } from "./pages/Workout";
+import { ExerciseGalleryPage } from "./pages/ExerciseGallery";
 import { WrappedPage } from "./pages/Wrapped";
 
 export default function App() {
@@ -18,6 +19,7 @@ export default function App() {
         <Route index element={<HomePage />} />
         <Route path="run" element={<RunPage />} />
         <Route path="workout" element={<WorkoutPage />} />
+        <Route path="workout/gallery" element={<ExerciseGalleryPage />} />
         <Route path="nutrition" element={<NutritionPage />} />
         <Route path="analytics" element={<AnalyticsPage />} />
         <Route path="consistency" element={<ConsistencyPage />} />

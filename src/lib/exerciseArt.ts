@@ -65,17 +65,30 @@ export function exerciseImageUrl(name: string, frame: 1 | 2 | 3 = 2): string | n
   return `${CDN}/assets/${slug}/frame-${frame}.png`;
 }
 
-export function searchGuideExercises(query: string, muscle?: string | null) {
+export function searchGuideExercises(
+  query: string,
+  muscle?: string | null,
+  equipment?: string | null,
+  limit = 40,
+) {
   const q = query.trim().toLowerCase();
-  return GUIDE_EXERCISES.filter((item) => {
+  const hits = GUIDE_EXERCISES.filter((item) => {
     if (muscle && item.muscle !== muscle) return false;
+    if (equipment && item.equipment !== equipment) return false;
     if (!q) return true;
     return (
       item.name.toLowerCase().includes(q) ||
       item.muscle.toLowerCase().includes(q) ||
-      item.equipment.toLowerCase().includes(q)
+      item.equipment.toLowerCase().includes(q) ||
+      item.slug.includes(q)
     );
-  }).slice(0, 40);
+  });
+  return limit ? hits.slice(0, limit) : hits;
+}
+
+export function slugImageUrl(slug: string, frame: 1 | 2 | 3 = 2) {
+  return `${CDN}/assets/${slug}/frame-${frame}.png`;
 }
 
 export const GUIDE_MUSCLES = [...new Set(GUIDE_EXERCISES.map((item) => item.muscle))].sort();
+export const GUIDE_EQUIPMENT = [...new Set(GUIDE_EXERCISES.map((item) => item.equipment))].sort();

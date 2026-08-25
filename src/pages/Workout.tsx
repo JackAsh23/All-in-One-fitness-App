@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Plus, Timer } from "lucide-react";
+import { Link, useLocation } from "react-router-dom";
+import { Images, Plus, Timer } from "lucide-react";
 import { Card } from "../components/Heatmap";
 import { ExerciseArt } from "../components/ExerciseArt";
 import { Sheet } from "../components/Sheet";
@@ -14,6 +15,7 @@ const REST_DEFAULT = 90;
 
 export function WorkoutPage() {
   const state = useAppState();
+  const location = useLocation();
   const [session, setSession] = useState<null | { template: string; exercises: WorkoutExercise[]; started: number }>(
     null,
   );
@@ -40,6 +42,13 @@ export function WorkoutPage() {
   const plan = TRAINING_PLANS.find((item) => item.id === planId) ?? TRAINING_PLANS[0];
   const todayDow = weekdayIndex(todayISO());
   const todayDay = plan.days.find((day) => day.weekday === todayDow) ?? null;
+
+  useEffect(() => {
+    const startExercise = (location.state as { startExercise?: string } | null)?.startExercise;
+    if (!startExercise) return;
+    startExercises("Custom Workout", [{ name: startExercise, sets: [] }]);
+    window.history.replaceState({}, "");
+  }, [location.state]);
 
   function startExercises(template: string, exercises: WorkoutExercise[]) {
     setSession({ template, started: Date.now(), exercises });
@@ -251,8 +260,23 @@ export function WorkoutPage() {
     <div className="space-y-4 animate-pop">
       <div className="flex items-end justify-between">
         <h2 className="text-2xl font-semibold">Workout</h2>
-        <p className="text-sm text-fog">{monthWorkouts} this month</p>
+        <div className="flex items-center gap-3">
+          <Link to="/workout/gallery" className="flex items-center gap-1 text-sm text-lift">
+            <Images size={14} />
+            Gallery
+          </Link>
+          <p className="text-sm text-fog">{monthWorkouts} this month</p>
+        </div>
       </div>
+
+      <Link
+        to="/workout/gallery"
+        className="block rounded-3xl border border-lift/40 bg-lift/10 px-4 py-4"
+      >
+        <p className="text-xs uppercase tracking-[0.18em] text-lift">@bryllim/workout-guide</p>
+        <p className="mt-1 font-semibold">Exercise gallery · 302 PNG guides</p>
+        <p className="mt-1 text-sm text-fog">Filter by muscle and equipment, preview 3 frames, start a set.</p>
+      </Link>
 
       <Card>
         <h3 className="mb-2 font-semibold">Training plan</h3>
