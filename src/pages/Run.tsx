@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { Footprints, MapPinned, Navigation, PersonStanding } from "lucide-react";
 import { ActivityMap } from "../components/ActivityMap";
+import { BackButton } from "../components/BackButton";
 import { Card } from "../components/Heatmap";
 import { Sheet } from "../components/Sheet";
 import { formatSourceLabel } from "../lib/integrations";
@@ -166,13 +167,18 @@ export function RunPage() {
     return (
       <div className="fixed inset-0 z-50 bg-ink">
         <div className="mx-auto flex h-dvh max-w-[430px] flex-col">
-          <ActivityMap
-            center={center}
-            path={path}
-            route={selectedRoute?.points ?? []}
-            follow
-            className="h-[58%] rounded-none"
-          />
+          <div className="relative h-[58%]">
+            <ActivityMap
+              center={center}
+              path={path}
+              route={selectedRoute?.points ?? []}
+              follow
+              className="h-full rounded-none"
+            />
+            <div className="absolute left-4 top-[max(0.75rem,env(safe-area-inset-top))] z-10">
+              <BackButton fallback="/run" onClick={stopLive} />
+            </div>
+          </div>
           <div className="-mt-6 flex-1 rounded-t-3xl bg-ink px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-5">
             <p className="text-xs uppercase tracking-[0.2em] text-run">
               Live {kind}
@@ -208,14 +214,25 @@ export function RunPage() {
     return (
       <div className="fixed inset-0 z-50 bg-ink">
         <div className="mx-auto flex h-dvh max-w-[430px] flex-col">
-          <ActivityMap
-            center={center}
-            route={draft?.points ?? []}
-            follow={false}
-            drawMode
-            onAddPoint={addPlanPoint}
-            className="h-[62%] rounded-none"
-          />
+          <div className="relative h-[62%]">
+            <ActivityMap
+              center={center}
+              route={draft?.points ?? []}
+              follow={false}
+              drawMode
+              onAddPoint={addPlanPoint}
+              className="h-full rounded-none"
+            />
+            <div className="absolute left-4 top-[max(0.75rem,env(safe-area-inset-top))] z-10">
+              <BackButton
+                fallback="/run"
+                onClick={() => {
+                  setDraft(null);
+                  setPhase("home");
+                }}
+              />
+            </div>
+          </div>
           <div className="-mt-6 flex-1 rounded-t-3xl bg-ink px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-5">
             <p className="text-xs uppercase tracking-[0.2em] text-step">Tap the map to drop waypoints</p>
             <h2 className="mt-1 text-2xl font-semibold">{draft?.distanceKm.toFixed(2) ?? "0.00"} km planned</h2>
@@ -249,6 +266,7 @@ export function RunPage() {
   if (phase === "gps") {
     return (
       <div className="space-y-4 animate-pop">
+        <BackButton fallback="/run" onClick={() => setPhase("home")} />
         <Card className="text-center">
           <p className="text-xs uppercase tracking-[0.2em] text-run">GPS required</p>
           <h2 className="mt-2 text-2xl font-semibold">Allow location to track this {kind}</h2>

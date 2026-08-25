@@ -1,5 +1,6 @@
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { BarChart3, Dumbbell, Flame, Home, Plus, Salad, UserRound, PersonStanding } from "lucide-react";
+import { BackButton } from "./BackButton";
 
 const TABS = [
   { to: "/", label: "Home", icon: Home, end: true },
@@ -10,17 +11,27 @@ const TABS = [
   { to: "/consistency", label: "OS", icon: Flame },
 ];
 
+const NESTED: Record<string, { parent: string; title: string }> = {
+  "/profile": { parent: "/", title: "Profile" },
+  "/integrations": { parent: "/profile", title: "Integrations" },
+  "/workout/gallery": { parent: "/workout", title: "Gallery" },
+};
+
 export function AppShell() {
   const location = useLocation();
   const isProfile = location.pathname === "/profile";
+  const nested = NESTED[location.pathname];
 
   return (
     <div className="min-h-dvh bg-[radial-gradient(circle_at_top,#14301f_0%,#05070a_42%)]">
       <div className="mx-auto flex min-h-dvh w-full max-w-[430px] flex-col overflow-x-hidden bg-ink shadow-[0_0_80px_rgba(62,224,127,0.08)]">
-        <header className="flex items-center justify-between px-5 pb-3 pt-[max(1rem,env(safe-area-inset-top))]">
-          <div>
-            <p className="text-[11px] uppercase tracking-[0.22em] text-life">One Life</p>
-            <h1 className="text-lg font-semibold leading-tight">Fitness OS</h1>
+        <header className="flex items-center justify-between gap-3 px-5 pb-3 pt-[max(1rem,env(safe-area-inset-top))]">
+          <div className="flex min-w-0 items-center gap-2">
+            {nested ? <BackButton fallback={nested.parent} /> : null}
+            <div className="min-w-0">
+              <p className="text-[11px] uppercase tracking-[0.22em] text-life">One Life</p>
+              <h1 className="text-lg font-semibold leading-tight">{nested?.title ?? "Fitness OS"}</h1>
+            </div>
           </div>
           <NavLink
             to="/profile"

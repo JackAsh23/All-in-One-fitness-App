@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { ExerciseArt } from "../components/ExerciseArt";
 import { Sheet } from "../components/Sheet";
 import {
@@ -27,14 +27,9 @@ export function ExerciseGalleryPage() {
 
   return (
     <div className="w-full min-w-0 space-y-4 animate-pop">
-      <div className="flex items-end justify-between">
-        <div>
-          <p className="text-xs uppercase tracking-[0.18em] text-lift">Workout Guide</p>
-          <h2 className="text-2xl font-semibold">Exercise gallery</h2>
-        </div>
-        <Link to="/workout" className="text-sm text-fog">
-          Plans
-        </Link>
+      <div>
+        <p className="text-xs uppercase tracking-[0.18em] text-lift">Workout Guide</p>
+        <h2 className="text-2xl font-semibold">Exercise gallery</h2>
       </div>
       <p className="text-sm text-fog">
         {GUIDE_EXERCISES.length} exercises from @bryllim/workout-guide — 3 PNG frames each. Tap a card to preview,

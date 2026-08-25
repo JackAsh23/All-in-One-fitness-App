@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { X } from "lucide-react";
+import { BackButton } from "../components/BackButton";
 import { buildYearWrapped } from "../lib/consistency";
 import { formatLongDate } from "../lib/dates";
 import { useAppState } from "../lib/store";
@@ -55,11 +55,11 @@ export function WrappedPage() {
   return (
     <div className="min-h-dvh bg-ink">
       <div className="mx-auto max-w-[430px]">
-        <div className="flex items-center justify-between px-5 pt-[max(1rem,env(safe-area-inset-top))]">
-          <p className="text-xs uppercase tracking-[0.2em] text-life">One Life Wrapped</p>
-          <Link to="/consistency" className="grid size-10 place-items-center rounded-full bg-card text-fog" aria-label="Close">
-            <X size={18} />
-          </Link>
+        <div className="flex items-center justify-between gap-3 px-5 pt-[max(1rem,env(safe-area-inset-top))]">
+          <div className="flex min-w-0 items-center gap-2">
+            <BackButton fallback="/consistency" />
+            <p className="text-xs uppercase tracking-[0.2em] text-life">One Life Wrapped</p>
+          </div>
         </div>
         <div className="space-y-4 px-4 pb-10 pt-2">
           {slides.map((slide, index) => (

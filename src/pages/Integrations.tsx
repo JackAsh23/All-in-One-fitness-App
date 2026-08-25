@@ -1,4 +1,3 @@
-import { Link } from "react-router-dom";
 import { RefreshCw } from "lucide-react";
 import { Card } from "../components/Heatmap";
 import { INTEGRATION_CATALOG, integrationMeta } from "../lib/integrations";
@@ -12,14 +11,9 @@ export function IntegrationsPage() {
 
   return (
     <div className="space-y-4 animate-pop">
-      <div className="flex items-end justify-between">
-        <div>
-          <p className="text-xs uppercase tracking-[0.18em] text-step">Phase 3</p>
-          <h2 className="text-2xl font-semibold">Integrations</h2>
-        </div>
-        <Link to="/profile" className="text-sm text-fog">
-          Profile
-        </Link>
+      <div>
+        <p className="text-xs uppercase tracking-[0.18em] text-step">Phase 3</p>
+        <h2 className="text-2xl font-semibold">Integrations</h2>
       </div>
 
       <Card>
