@@ -15,6 +15,9 @@ function githubPagesPwa(): Plugin {
     transformIndexHtml(html) {
       if (process.env.GITHUB_PAGES !== "true") return html;
       return html.replace(
+        "<head>",
+        `<head>\n    <base href="${GITHUB_PAGES_BASE}" />`,
+      ).replace(
         "</head>",
         `    <link rel="manifest" href="${GITHUB_PAGES_BASE}manifest.webmanifest" />\n</head>`,
       );
