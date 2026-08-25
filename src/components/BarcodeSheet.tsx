@@ -86,10 +86,10 @@ export function BarcodeSheet({ open, loading = false, onClose, onScan }: Props) 
   }, [cameraOn, open, onScan]);
 
   return (
-    <Sheet open={open} title="Scan barcode" onClose={onClose}>
-      <p className="text-sm text-fog">
-        Look up packaged food via Open Food Facts. Use your camera or type the digits from the label.
-      </p>
+    <Sheet open={open} title="Barcode lookup" onClose={onClose}>
+      <div className="rounded-2xl border border-eat/40 bg-eat/10 px-3 py-2 text-sm text-eat">
+        Open Food Facts — scan or type any product barcode. Demo buttons use local Filipino foods.
+      </div>
 
       {cameraOn ? (
         <div className="mt-4 overflow-hidden rounded-2xl border border-line bg-black">

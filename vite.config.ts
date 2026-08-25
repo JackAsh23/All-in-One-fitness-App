@@ -61,7 +61,7 @@ export default defineConfig({
     workoutGuideAssets(),
     VitePWA({
       registerType: "autoUpdate",
-      injectRegister: "auto",
+      injectRegister: null,
       includeAssets: ["favicon.svg", "apple-touch-icon.png", "pwa-192.png", "pwa-512.png"],
       manifest: {
         name: "One Life — Fitness OS",
@@ -82,6 +82,8 @@ export default defineConfig({
         ],
       },
       workbox: {
+        skipWaiting: true,
+        clientsClaim: true,
         navigateFallback: isGithubPages ? `${GITHUB_PAGES_BASE}index.html` : "/index.html",
         navigateFallbackDenylist: [/^\/wg\//, /^\/All-in-One-fitness-App\/wg\//],
         globPatterns: ["**/*.{js,css,html,ico,png,svg,webmanifest,woff2}"],

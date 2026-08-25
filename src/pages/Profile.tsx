@@ -3,7 +3,9 @@ import { Link } from "react-router-dom";
 import { Card } from "../components/Heatmap";
 import { GOAL_MODES } from "../lib/goalModes";
 import { defaultPriorities } from "../lib/scoring";
+import { hardRefreshApp } from "../lib/appRefresh";
 import { downloadBackup, importBackup, resetDemo, setGoalMode, updateProfile, useAppState } from "../lib/store";
+import { APP_VERSION } from "../lib/version";
 import type { Priorities } from "../lib/types";
 
 export function ProfilePage() {
@@ -47,6 +49,57 @@ export function ProfilePage() {
       >
         Connected apps & auto-sync →
       </Link>
+      <Card className="ring-1 ring-life/30">
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <h3 className="font-semibold">Backup data</h3>
+          <span className="rounded-full bg-life/15 px-2 py-0.5 text-[10px] uppercase tracking-wide text-life">
+            v{APP_VERSION}
+          </span>
+        </div>
+        <p className="text-sm text-fog">
+          Export everything (runs, workouts, food log, weight) as a JSON file. Import on a new phone or after clearing
+          Safari data.
+        </p>
+        <div className="mt-4 flex flex-col gap-2">
+          <button
+            type="button"
+            onClick={() => downloadBackup()}
+            className="w-full rounded-2xl bg-life py-3 font-semibold text-ink"
+          >
+            Export backup (.json)
+          </button>
+          <label className="block w-full cursor-pointer rounded-2xl border border-eat/40 bg-eat/10 py-3 text-center text-sm font-medium text-eat">
+            Import backup
+            <input
+              type="file"
+              accept="application/json,.json"
+              className="hidden"
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                event.target.value = "";
+                if (!file) return;
+                file.text().then((raw) => {
+                  const result = importBackup(raw);
+                  if (result.ok) {
+                    setImportStatus("Backup restored.");
+                    window.setTimeout(() => setImportStatus(null), 2400);
+                  } else {
+                    window.alert(result.error);
+                  }
+                });
+              }}
+            />
+          </label>
+          {importStatus ? <p className="text-center text-sm text-life">{importStatus}</p> : null}
+          <button
+            type="button"
+            onClick={() => void hardRefreshApp()}
+            className="w-full rounded-2xl border border-line py-3 text-sm text-fog"
+          >
+            Get latest app version
+          </button>
+        </div>
+      </Card>
       <Card>
         <p className="text-sm text-fog">
           The heatmap and score follow your priorities. A marathon block shouldn’t punish missed bench days.
@@ -128,45 +181,6 @@ export function ProfilePage() {
       <button type="button" onClick={save} className="w-full rounded-3xl bg-life py-3 font-semibold text-ink">
         {saved ? "Saved" : "Save profile"}
       </button>
-      <Card>
-        <h3 className="mb-2 font-semibold">Backup data</h3>
-        <p className="text-sm text-fog">
-          Export everything (runs, workouts, food log, weight) as a JSON file. Import on a new phone or after clearing
-          Safari data.
-        </p>
-        <div className="mt-4 flex flex-col gap-2">
-          <button
-            type="button"
-            onClick={() => downloadBackup()}
-            className="w-full rounded-2xl border border-life/40 bg-life/10 py-3 font-medium text-life"
-          >
-            Export backup
-          </button>
-          <label className="block w-full cursor-pointer rounded-2xl border border-line py-3 text-center text-sm text-snow">
-            Import backup
-            <input
-              type="file"
-              accept="application/json,.json"
-              className="hidden"
-              onChange={(event) => {
-                const file = event.target.files?.[0];
-                event.target.value = "";
-                if (!file) return;
-                file.text().then((raw) => {
-                  const result = importBackup(raw);
-                  if (result.ok) {
-                    setImportStatus("Backup restored.");
-                    window.setTimeout(() => setImportStatus(null), 2400);
-                  } else {
-                    window.alert(result.error);
-                  }
-                });
-              }}
-            />
-          </label>
-          {importStatus ? <p className="text-center text-sm text-life">{importStatus}</p> : null}
-        </div>
-      </Card>
       <button
         type="button"
         onClick={resetDemo}
@@ -175,7 +189,7 @@ export function ProfilePage() {
         Reload demo year
       </button>
       <p className="px-1 text-center text-xs text-fog">
-        One Life v1.1 — GPS runs, training plans, smarter food log. Data stays in this browser.
+        One Life v{APP_VERSION} — backup, barcode lookup, GPS runs. Data stays on this device.
       </p>
     </div>
   );
