@@ -8,6 +8,7 @@ export function ExerciseArt({
   className = "",
   animate = false,
   fill = false,
+  interactive = true,
 }: {
   name: string;
   slug?: string;
@@ -15,6 +16,8 @@ export function ExerciseArt({
   className?: string;
   animate?: boolean;
   fill?: boolean;
+  /** When false, renders a div (safe inside other buttons). */
+  interactive?: boolean;
 }) {
   const [frame, setFrame] = useState<1 | 2 | 3>(2);
   const resolvedSlug = slug ?? exerciseSlug(name);
@@ -47,6 +50,29 @@ export function ExerciseArt({
     );
   }
 
+  const content = (
+    <img
+      src={src}
+      alt={name}
+      width={fill ? undefined : size}
+      height={fill ? undefined : size}
+      loading="lazy"
+      className="size-full object-contain"
+      onError={() => {
+        if (cdn && src !== cdn) setSrc(cdn);
+        else setFailed(true);
+      }}
+    />
+  );
+
+  if (!interactive) {
+    return (
+      <div className={boxClass} style={boxStyle} aria-hidden>
+        {content}
+      </div>
+    );
+  }
+
   return (
     <button
       type="button"
@@ -55,18 +81,7 @@ export function ExerciseArt({
       style={boxStyle}
       aria-label={`${name} illustration`}
     >
-      <img
-        src={src}
-        alt={name}
-        width={fill ? undefined : size}
-        height={fill ? undefined : size}
-        loading="lazy"
-        className="size-full object-contain"
-        onError={() => {
-          if (cdn && src !== cdn) setSrc(cdn);
-          else setFailed(true);
-        }}
-      />
+      {content}
     </button>
   );
 }

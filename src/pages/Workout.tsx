@@ -174,7 +174,7 @@ export function WorkoutPage() {
                 index === activeExercise ? "bg-lift text-ink" : "bg-card text-fog"
               }`}
             >
-              <ExerciseArt name={exercise.name} size={28} className="rounded-full" />
+              <ExerciseArt name={exercise.name} size={28} className="rounded-full" interactive={false} />
               {exercise.name}
             </button>
           ))}
@@ -342,7 +342,7 @@ export function WorkoutPage() {
                     <ul className="mt-2 space-y-1">
                       {day.exercises.map((exercise) => (
                         <li key={exercise.name} className="flex items-center gap-2 text-sm">
-                          <ExerciseArt name={exercise.name} size={36} className="rounded-xl" />
+                          <ExerciseArt name={exercise.name} size={36} className="rounded-xl" interactive={false} />
                           <span className="flex-1">{exercise.name}</span>
                           <span className="font-mono text-xs text-fog">
                             {exercise.sets}×{exercise.reps}
@@ -470,7 +470,7 @@ function AddExerciseSheet({
             onClick={() => onPick(item.name)}
             className="flex w-full items-center gap-3 rounded-2xl bg-card px-2 py-2 text-left"
           >
-            <ExerciseArt name={item.name} size={52} />
+            <ExerciseArt name={item.name} size={52} interactive={false} />
             <span>
               <p>{item.name}</p>
               <p className="text-xs text-fog">
