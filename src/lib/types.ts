@@ -146,6 +146,8 @@ export type StravaAuth = {
   expiresAt: number;
 };
 
+export type DataMode = "live" | "demo";
+
 export type AppState = {
   profile: Profile;
   runs: RunLog[];
@@ -161,6 +163,10 @@ export type AppState = {
   savedMeals: SavedMeal[];
   savedRoutes: RoutePlan[];
   strava?: StravaAuth;
+  /** live = real tracking; demo = seeded sample year. */
+  dataMode?: DataMode;
+  /** ISO timestamp of last save; used to merge localStorage vs IndexedDB. */
+  savedAt?: string;
 };
 
 export type DayParts = {

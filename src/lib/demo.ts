@@ -276,6 +276,7 @@ export function createDemoState(today = todayISO()): AppState {
         ],
       },
     ],
+    dataMode: "demo",
   };
 }
 
@@ -307,5 +308,6 @@ export function createBlankState(): AppState {
     favoriteFoodIds: [],
     recentFoods: [],
     savedMeals: [],
+    dataMode: "live",
   };
 }

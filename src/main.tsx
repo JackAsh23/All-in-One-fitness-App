@@ -27,13 +27,17 @@ if (import.meta.env.PROD && !Capacitor.isNativePlatform()) {
   });
 }
 
-initStore();
+initStore()
+  .catch(() => {
+    /* IndexedDB / storage unavailable — render with in-memory state */
+  })
+  .finally(() => {
+    createRoot(document.getElementById("root")!).render(
+      <StrictMode>
+        <BrowserRouter basename={routerBasename()}>
+          <App />
+        </BrowserRouter>
+      </StrictMode>,
+    );
+  });
 void initCapacitor();
-
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <BrowserRouter basename={routerBasename()}>
-      <App />
-    </BrowserRouter>
-  </StrictMode>,
-);
