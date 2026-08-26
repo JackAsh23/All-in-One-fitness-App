@@ -86,7 +86,9 @@ export function AnalyticsPage() {
   const [weighIn, setWeighIn] = useState(String(weight.current ?? 76));
   const [weighDate, setWeighDate] = useState(todayISO());
   const [heightCm, setHeightCm] = useState(String(state.profile.heightCm ?? ""));
-  const bmi = bodyMassIndex(weight.current ?? 0, Number(heightCm) || 0);
+  const heightValue = Number(heightCm) || state.profile.heightCm || 0;
+  const weightValue = weight.current ?? (Number(weighIn) || 0);
+  const bmi = bodyMassIndex(weightValue, heightValue);
   const bmiInfo = bmi != null ? bmiCategory(bmi) : null;
 
   return (
@@ -371,14 +373,14 @@ export function AnalyticsPage() {
               Height (cm)
               <input
                 value={heightCm}
-                onChange={(event) => setHeightCm(event.target.value)}
-                onBlur={() => {
-                  const cm = Number(heightCm);
-                  if (cm > 0) updateProfile({ heightCm: cm });
+                onChange={(event) => {
+                  setHeightCm(event.target.value);
+                  const cm = Number(event.target.value);
+                  if (cm >= 100 && cm <= 250) updateProfile({ heightCm: cm });
                 }}
                 className="mt-1 w-full rounded-2xl border border-line bg-ink px-3 py-3 text-snow"
                 inputMode="decimal"
-                placeholder="170"
+                placeholder="e.g. 170"
               />
             </label>
             {bmiInfo && bmi != null ? (
@@ -445,7 +447,11 @@ export function AnalyticsPage() {
               <button
                 type="button"
                 className="rounded-2xl bg-step px-4 py-3 font-semibold text-ink"
-                onClick={() => logWeight(weighDate, Number(weighIn))}
+                onClick={() => {
+                  logWeight(weighDate, Number(weighIn));
+                  const cm = Number(heightCm);
+                  if (cm >= 100 && cm <= 250) updateProfile({ heightCm: cm });
+                }}
               >
                 Log kg
               </button>
