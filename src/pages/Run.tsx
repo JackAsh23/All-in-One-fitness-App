@@ -11,6 +11,7 @@ import { defaultCenter, haversineKm, kcalForDistance, pathDistanceKm, requestGps
 import { newDraftRoute, presetRoutes } from "../lib/routes";
 import { summarizeDay } from "../lib/scoring";
 import { addRun, removeRoute, saveRoute, useAppState } from "../lib/store";
+import { appendRoutedPoint } from "../lib/osrm";
 import type { GeoPoint, RoutePlan, SportKind } from "../lib/types";
 
 type Phase = "home" | "gps" | "plan" | "live";
@@ -28,6 +29,9 @@ export function RunPage() {
   const [elapsed, setElapsed] = useState(0);
   const [selectedRoute, setSelectedRoute] = useState<RoutePlan | null>(null);
   const [draft, setDraft] = useState<RoutePlan | null>(null);
+  const [routeName, setRouteName] = useState("");
+  const [routingBusy, setRoutingBusy] = useState(false);
+  const [routeHint, setRouteHint] = useState<string | null>(null);
   const [logOpen, setLogOpen] = useState(false);
   const [distance, setDistance] = useState("5.0");
   const [minutes, setMinutes] = useState("32");
@@ -35,6 +39,8 @@ export function RunPage() {
   const [logKind, setLogKind] = useState<SportKind>("run");
   const pendingPhase = useRef<Phase>("live");
   const watchOff = useRef<(() => void) | null>(null);
+  const draftRef = useRef<RoutePlan | null>(null);
+  draftRef.current = draft;
 
   const presets = useMemo(() => presetRoutes(center), [center]);
   const allRoutes = [...state.savedRoutes, ...presets.filter((p) => !state.savedRoutes.some((s) => s.id === p.id))];
@@ -150,23 +156,47 @@ export function RunPage() {
     setLogOpen(false);
   }
 
-  function addPlanPoint(point: GeoPoint) {
-    setDraft((current) => {
-      const base = current ?? newDraftRoute(kind, []);
-      const points = [...base.points, point];
-      return { ...base, points, distanceKm: Math.round(pathDistanceKm(points) * 100) / 100 };
-    });
-    setCenter(point);
+  async function addPlanPoint(point: GeoPoint) {
+    if (routingBusy) return;
+    setRoutingBusy(true);
+    setRouteHint("Snapping to walkable paths…");
+    try {
+      const base = draftRef.current ?? newDraftRoute(kind, []);
+      const points = await appendRoutedPoint(base.points, point);
+      const waypoints = [...(base.waypoints ?? []), point];
+      setDraft({
+        ...base,
+        waypoints,
+        points,
+        distanceKm: Math.round(pathDistanceKm(points) * 100) / 100,
+      });
+      setCenter(points[points.length - 1] ?? point);
+      setRouteHint("Line follows footpaths and roads people can use.");
+    } catch {
+      setRouteHint("Could not reach the map router — dropped a straight point.");
+    } finally {
+      setRoutingBusy(false);
+    }
   }
 
   function followDraft() {
     if (!draft || draft.points.length < 2) return;
-    saveRoute(draft);
-    setSelectedRoute(draft);
+    const named = { ...draft, name: routeName.trim() || draft.name };
+    saveRoute(named);
+    setSelectedRoute(named);
     setPath([center]);
     startWatch(center);
     setElapsed(0);
     setPhase("live");
+  }
+
+  function persistDraftRoute() {
+    if (!draft || draft.points.length < 2) return;
+    const named = { ...draft, name: routeName.trim() || draft.name };
+    saveRoute(named);
+    setSelectedRoute(named);
+    setDraft(null);
+    setPhase("home");
   }
 
   if (phase === "live") {
@@ -243,13 +273,26 @@ export function RunPage() {
           <div className="-mt-6 flex-1 rounded-t-3xl bg-ink px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-5">
             <p className="text-xs uppercase tracking-[0.2em] text-step">Tap the map to drop waypoints</p>
             <h2 className="mt-1 text-2xl font-semibold">{draft?.distanceKm.toFixed(2) ?? "0.00"} km planned</h2>
-            <p className="text-sm text-fog">{draft?.points.length ?? 0} points · {kind}</p>
+            <p className="text-sm text-fog">
+              {draft?.waypoints?.length ?? draft?.points.length ?? 0} stops · {kind}
+              {routingBusy ? " · routing…" : ""}
+            </p>
+            <p className="mt-1 text-xs text-fog">
+              {routeHint ?? "The line snaps to walkable paths instead of cutting through buildings."}
+            </p>
+            <input
+              value={routeName}
+              onChange={(event) => setRouteName(event.target.value)}
+              placeholder={kind === "walk" ? "Name this walk" : "Name this run"}
+              className="mt-3 w-full rounded-2xl border border-line bg-card px-3 py-3 text-snow outline-none"
+            />
             <div className="mt-4 flex gap-2">
               <button
                 type="button"
                 className="flex-1 rounded-2xl bg-card py-3"
                 onClick={() => {
                   setDraft(null);
+                  setRouteName("");
                   setPhase("home");
                 }}
               >
@@ -257,13 +300,21 @@ export function RunPage() {
               </button>
               <button
                 type="button"
-                className="flex-1 rounded-2xl bg-run py-3 font-semibold text-ink disabled:opacity-40"
-                disabled={!draft || draft.points.length < 2}
-                onClick={followDraft}
+                className="flex-1 rounded-2xl border border-step/40 bg-step/15 py-3 font-semibold text-step disabled:opacity-40"
+                disabled={!draft || draft.points.length < 2 || routingBusy}
+                onClick={persistDraftRoute}
               >
-                Follow route
+                Save route
               </button>
             </div>
+            <button
+              type="button"
+              className="mt-2 w-full rounded-2xl bg-run py-3 font-semibold text-ink disabled:opacity-40"
+              disabled={!draft || draft.points.length < 2 || routingBusy}
+              onClick={followDraft}
+            >
+              Follow route
+            </button>
           </div>
         </div>
       </div>
@@ -353,19 +404,23 @@ export function RunPage() {
           className="col-span-2 flex items-center gap-3 rounded-3xl border border-step/40 bg-step/10 px-4 py-4 text-left"
           onClick={() => {
             setDraft(newDraftRoute(kind, []));
+            setRouteName(kind === "walk" ? "Custom walk" : "Custom run");
             void unlockGps("plan", kind);
           }}
         >
           <MapPinned size={18} className="text-step" />
           <span>
             <p className="font-semibold">Plan a route</p>
-            <p className="text-sm text-fog">Drop waypoints, then follow it live</p>
+            <p className="text-sm text-fog">Follow walkable paths, then save it for later</p>
           </span>
         </button>
       </div>
 
       <Card>
         <h3 className="mb-3 font-semibold">Routes</h3>
+        {state.savedRoutes.length === 0 ? (
+          <p className="mb-3 text-sm text-fog">Plan a route and tap Save to keep it for later runs.</p>
+        ) : null}
         <div className="space-y-2">
           {allRoutes.map((route) => (
             <div key={route.id} className="flex items-center gap-2 rounded-2xl bg-ink px-3 py-2">

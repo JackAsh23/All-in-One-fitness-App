@@ -69,7 +69,7 @@ export function HomePage() {
           <p className="mt-1 text-xs font-semibold text-eat">Log food</p>
         </Link>
         <Link
-          to="/workout?start=1"
+          to="/workout"
           className="rounded-3xl bg-lift/15 px-2 py-3 text-center"
         >
           <Dumbbell className="mx-auto text-lift" size={22} />
@@ -123,22 +123,6 @@ export function HomePage() {
           color="text-life"
         />
         <StatTile
-          to="/run"
-          icon={<PersonStanding size={18} />}
-          label="Run"
-          value={day.runKm ? `${day.runKm.toFixed(1)} km` : "Log a run"}
-          sub={day.runKm ? formatPace(day.runDurationSec, day.runKm) : "Manual or synced"}
-          color="text-run"
-        />
-        <StatTile
-          to="/workout"
-          icon={<Dumbbell size={18} />}
-          label="Workout"
-          value={day.workoutName ?? "Train today"}
-          sub={day.workoutCount ? `${day.workoutSets} sets · ${day.workoutMinutes}m` : "Upper, push, custom"}
-          color="text-lift"
-        />
-        <StatTile
           to="/nutrition"
           icon={<Salad size={18} />}
           label="Calories"
@@ -147,7 +131,7 @@ export function HomePage() {
           color="text-eat"
         />
         <StatTile
-          to="/consistency"
+          to="/analytics?tab=steps"
           icon={<Footprints size={18} />}
           label="Steps"
           value={`${day.steps.toLocaleString()} / ${state.profile.stepGoal.toLocaleString()}`}

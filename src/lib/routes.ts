@@ -48,6 +48,7 @@ export function newDraftRoute(kind: SportKind, points: GeoPoint[] = []): RoutePl
     name: kind === "walk" ? "Custom walk" : "Custom run",
     kind,
     points,
+    waypoints: points.length ? [...points] : [],
     distanceKm: Math.round(pathDistanceKm(points) * 100) / 100,
   };
 }

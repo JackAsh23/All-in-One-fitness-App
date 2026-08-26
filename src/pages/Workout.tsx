@@ -8,11 +8,12 @@ import { Sheet } from "../components/Sheet";
 import { GUIDE_MUSCLES, searchGuideExercises } from "../lib/exerciseArt";
 import { EXERCISE_CATALOG, TEMPLATES } from "../lib/exercises";
 import { formatShortDate, nowTime, todayISO, uid, weekdayIndex } from "../lib/dates";
-import { addWorkout, useAppState } from "../lib/store";
+import { addWorkout, setTrainingPlan, updateProfile, useAppState } from "../lib/store";
 import { TRAINING_PLANS, type PlanDay, type TrainingPlan } from "../lib/trainingPlans";
+import { formatWorkoutSet, isTimedExercise, parseTimedTarget, sessionHasLoggedSets } from "../lib/exerciseTiming";
 import type { WorkoutExercise } from "../lib/types";
 
-const REST_DEFAULT = 90;
+const REST_CHOICES = [30, 45, 60, 90, 120, 180];
 
 export function WorkoutPage() {
   const state = useAppState();
@@ -27,9 +28,15 @@ export function WorkoutPage() {
   const [muscle, setMuscle] = useState<string | null>(null);
   const [kg, setKg] = useState("20");
   const [reps, setReps] = useState("10");
+  const [holdSec, setHoldSec] = useState("45");
+  const [holdElapsed, setHoldElapsed] = useState(0);
+  const [holdRunning, setHoldRunning] = useState(false);
   const [activeExercise, setActiveExercise] = useState(0);
-  const [planId, setPlanId] = useState(TRAINING_PLANS[0].id);
   const [planOpen, setPlanOpen] = useState(true);
+  const restSec = state.profile.restSec ?? 90;
+  const plan = TRAINING_PLANS.find((item) => item.id === state.trainingPlanId) ?? null;
+  const todayDow = weekdayIndex(todayISO());
+  const todayDay = plan?.days.find((day) => day.weekday === todayDow) ?? null;
 
   useEffect(() => {
     if (rest <= 0) return;
@@ -37,14 +44,16 @@ export function WorkoutPage() {
     return () => window.clearInterval(id);
   }, [rest]);
 
+  useEffect(() => {
+    if (!holdRunning) return;
+    const id = window.setInterval(() => setHoldElapsed((value) => value + 1), 1000);
+    return () => window.clearInterval(id);
+  }, [holdRunning]);
+
   const history = useMemo(
     () => [...state.workouts].sort((a, b) => `${b.date}${b.time}`.localeCompare(`${a.date}${a.time}`)),
     [state.workouts],
   );
-
-  const plan = TRAINING_PLANS.find((item) => item.id === planId) ?? TRAINING_PLANS[0];
-  const todayDow = weekdayIndex(todayISO());
-  const todayDay = plan.days.find((day) => day.weekday === todayDow) ?? null;
 
   useEffect(() => {
     const startExercise = (location.state as { startExercise?: string } | null)?.startExercise;
@@ -56,17 +65,27 @@ export function WorkoutPage() {
   useEffect(() => {
     if (searchParams.get("start") !== "1") return;
     setSearchParams({}, { replace: true });
-    if (todayDay) startPlanDay(todayDay, plan);
-    else startTemplate("upper");
+    if (todayDay && plan) startPlanDay(todayDay, plan);
   }, []);
+
+  function syncInputsFor(exercise?: WorkoutExercise) {
+    setHoldRunning(false);
+    setHoldElapsed(0);
+    if (!exercise) return;
+    const timed = isTimedExercise(exercise.name, exercise.targetReps);
+    const target = parseTimedTarget(exercise.targetReps);
+    if (timed) setHoldSec(String(target ?? 45));
+    else if (exercise.targetReps) {
+      const n = Number.parseInt(exercise.targetReps, 10);
+      if (Number.isFinite(n) && parseTimedTarget(exercise.targetReps) == null) setReps(String(n));
+    }
+  }
 
   function startExercises(template: string, exercises: WorkoutExercise[]) {
     setSession({ template, started: Date.now(), exercises });
     setActiveExercise(0);
-    if (exercises[0]?.targetReps) {
-      const n = Number.parseInt(exercises[0].targetReps, 10);
-      if (Number.isFinite(n)) setReps(String(n));
-    }
+    setRest(0);
+    syncInputsFor(exercises[0]);
   }
 
   function startTemplate(id: string) {
@@ -95,9 +114,18 @@ export function WorkoutPage() {
     const next = structuredClone(session);
     const exercise = next.exercises[activeExercise];
     if (!exercise) return;
-    exercise.sets.push({ kg: Number(kg) || 0, reps: Number(reps) || 0 });
+    const timed = isTimedExercise(exercise.name, exercise.targetReps);
+    if (timed) {
+      const seconds = holdElapsed > 0 ? holdElapsed : Number(holdSec) || 0;
+      if (!seconds) return;
+      exercise.sets.push({ kg: 0, reps: 0, durationSec: seconds });
+      setHoldRunning(false);
+      setHoldElapsed(0);
+    } else {
+      exercise.sets.push({ kg: Number(kg) || 0, reps: Number(reps) || 0 });
+    }
     setSession(next);
-    setRest(REST_DEFAULT);
+    setRest(restSec);
   }
 
   function addExercise(name: string) {
@@ -109,10 +137,17 @@ export function WorkoutPage() {
     setCustomOpen(false);
     setCustomName("");
     setActiveExercise(session.exercises.length);
+    syncInputsFor({ name: name.trim(), sets: [] });
   }
 
   function finish() {
     if (!session) return;
+    if (!sessionHasLoggedSets(session.exercises)) {
+      setSession(null);
+      setRest(0);
+      setHoldRunning(false);
+      return;
+    }
     const durationMin = Math.max(1, Math.round((Date.now() - session.started) / 60000));
     addWorkout({
       id: uid("wo"),
@@ -120,12 +155,11 @@ export function WorkoutPage() {
       time: nowTime(),
       template: session.template,
       durationMin,
-      exercises: session.exercises.filter(
-        (exercise) => exercise.sets.length > 0 || session.template === "Custom Workout",
-      ),
+      exercises: session.exercises.filter((exercise) => exercise.sets.length > 0),
     });
     setSession(null);
     setRest(0);
+    setHoldRunning(false);
   }
 
   const monthWorkouts = state.workouts.filter((workout) => workout.date.startsWith(todayISO().slice(0, 7))).length;
@@ -157,14 +191,42 @@ export function WorkoutPage() {
         </div>
 
         {rest > 0 ? (
-          <Card className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-life">
-              <Timer size={16} />
-              Rest timer
+          <Card>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-life">
+                <Timer size={16} />
+                Rest
+              </div>
+              <p className="font-mono text-3xl">{rest}s</p>
             </div>
-            <p className="font-mono text-3xl">{rest}s</p>
+            <div className="mt-3 flex gap-2">
+              <button type="button" className="flex-1 rounded-2xl bg-ink py-2 text-sm" onClick={() => setRest(0)}>
+                Skip
+              </button>
+              <button type="button" className="flex-1 rounded-2xl bg-ink py-2 text-sm" onClick={() => setRest((value) => value + 15)}>
+                +15s
+              </button>
+            </div>
           </Card>
         ) : null}
+
+        <Card>
+          <p className="mb-2 text-xs uppercase tracking-wide text-fog">Rest between sets</p>
+          <div className="flex gap-2 overflow-x-auto no-scrollbar">
+            {REST_CHOICES.map((seconds) => (
+              <button
+                key={seconds}
+                type="button"
+                onClick={() => updateProfile({ restSec: seconds })}
+                className={`shrink-0 rounded-full px-3 py-1.5 text-sm ${
+                  restSec === seconds ? "bg-lift text-ink" : "bg-ink text-fog"
+                }`}
+              >
+                {seconds}s
+              </button>
+            ))}
+          </div>
+        </Card>
 
         <div className="flex gap-2 overflow-x-auto no-scrollbar">
           {session.exercises.map((exercise, index) => (
@@ -173,10 +235,7 @@ export function WorkoutPage() {
               type="button"
               onClick={() => {
                 setActiveExercise(index);
-                if (exercise.targetReps) {
-                  const n = Number.parseInt(exercise.targetReps, 10);
-                  if (Number.isFinite(n)) setReps(String(n));
-                }
+                syncInputsFor(exercise);
               }}
               className={`flex shrink-0 items-center gap-2 rounded-full py-1.5 pl-1.5 pr-3 text-sm ${
                 index === activeExercise ? "bg-lift text-ink" : "bg-card text-fog"
@@ -222,35 +281,86 @@ export function WorkoutPage() {
                   <li key={index} className="flex justify-between rounded-2xl bg-ink px-3 py-2 font-mono text-sm">
                     <span>Set {index + 1}</span>
                     <span>
-                      {set.kg}kg × {set.reps}
+                      {formatWorkoutSet(set)}
                     </span>
                   </li>
                 ))}
               </ul>
             )}
-            <div className="grid grid-cols-2 gap-3">
-              <label className="text-sm text-fog">
-                kg
-                <input
-                  value={kg}
-                  onChange={(event) => setKg(event.target.value)}
-                  className="mt-1 w-full rounded-2xl border border-line bg-ink px-3 py-3 text-snow"
-                  inputMode="decimal"
-                />
-              </label>
-              <label className="text-sm text-fog">
-                reps
-                <input
-                  value={reps}
-                  onChange={(event) => setReps(event.target.value)}
-                  className="mt-1 w-full rounded-2xl border border-line bg-ink px-3 py-3 text-snow"
-                  inputMode="numeric"
-                />
-              </label>
-            </div>
-            <button type="button" onClick={logSet} className="mt-3 w-full rounded-2xl bg-lift py-3 font-semibold text-ink">
-              Log set
-            </button>
+            {isTimedExercise(current.name, current.targetReps) ? (
+              <div className="space-y-3">
+                <div className="rounded-2xl bg-ink px-3 py-4 text-center">
+                  <p className="text-xs uppercase tracking-wide text-fog">Hold timer</p>
+                  <p className="font-mono text-5xl">{holdRunning || holdElapsed > 0 ? holdElapsed : holdSec}s</p>
+                  {parseTimedTarget(current.targetReps) ? (
+                    <p className="mt-1 text-sm text-fog">Target {parseTimedTarget(current.targetReps)}s</p>
+                  ) : null}
+                </div>
+                <label className="text-sm text-fog">
+                  Target seconds
+                  <input
+                    value={holdSec}
+                    onChange={(event) => setHoldSec(event.target.value)}
+                    className="mt-1 w-full rounded-2xl border border-line bg-ink px-3 py-3 text-snow"
+                    inputMode="numeric"
+                  />
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    className="rounded-2xl bg-ink py-3 font-semibold"
+                    onClick={() => {
+                      if (holdRunning) setHoldRunning(false);
+                      else {
+                        if (holdElapsed === 0) setHoldElapsed(0);
+                        setHoldRunning(true);
+                      }
+                    }}
+                  >
+                    {holdRunning ? "Pause" : holdElapsed > 0 ? "Resume" : "Start timer"}
+                  </button>
+                  <button
+                    type="button"
+                    className="rounded-2xl bg-card py-3"
+                    onClick={() => {
+                      setHoldRunning(false);
+                      setHoldElapsed(0);
+                    }}
+                  >
+                    Reset
+                  </button>
+                </div>
+                <button type="button" onClick={logSet} className="w-full rounded-2xl bg-lift py-3 font-semibold text-ink">
+                  Log hold
+                </button>
+              </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-2 gap-3">
+                  <label className="text-sm text-fog">
+                    kg
+                    <input
+                      value={kg}
+                      onChange={(event) => setKg(event.target.value)}
+                      className="mt-1 w-full rounded-2xl border border-line bg-ink px-3 py-3 text-snow"
+                      inputMode="decimal"
+                    />
+                  </label>
+                  <label className="text-sm text-fog">
+                    reps
+                    <input
+                      value={reps}
+                      onChange={(event) => setReps(event.target.value)}
+                      className="mt-1 w-full rounded-2xl border border-line bg-ink px-3 py-3 text-snow"
+                      inputMode="numeric"
+                    />
+                  </label>
+                </div>
+                <button type="button" onClick={logSet} className="mt-3 w-full rounded-2xl bg-lift py-3 font-semibold text-ink">
+                  Log set
+                </button>
+              </>
+            )}
           </Card>
         ) : (
           <Card>
@@ -300,18 +410,36 @@ export function WorkoutPage() {
         <div className="flex items-start justify-between gap-3">
           <div>
             <h3 className="font-semibold">Training plan</h3>
-            <p className="mt-1 text-xs text-fog">{plan.name}</p>
+            <p className="mt-1 text-xs text-fog">{plan ? plan.name : "None selected"}</p>
           </div>
-          <button
-            type="button"
-            onClick={() => setPlanOpen((open) => !open)}
-            className="flex shrink-0 items-center gap-1 rounded-full bg-ink px-3 py-1.5 text-sm text-fog"
-          >
-            {planOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-            {planOpen ? "Hide" : "Show"}
-          </button>
+          {plan ? (
+            <button
+              type="button"
+              onClick={() => setPlanOpen((open) => !open)}
+              className="flex shrink-0 items-center gap-1 rounded-full bg-ink px-3 py-1.5 text-sm text-fog"
+            >
+              {planOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+              {planOpen ? "Hide" : "Show"}
+            </button>
+          ) : null}
         </div>
-        {planOpen ? (
+        {!plan ? (
+          <>
+            <p className="mt-3 text-sm text-fog">Empty until you pick a split. Your log stays blank until you start a session.</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {TRAINING_PLANS.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setTrainingPlan(item.id)}
+                  className="rounded-full bg-ink px-3 py-1.5 text-sm text-fog"
+                >
+                  {item.name}
+                </button>
+              ))}
+            </div>
+          </>
+        ) : planOpen ? (
           <>
             <p className="mt-3 mb-3 text-xs text-fog">{plan.blurb}</p>
             <div className="mb-3 flex gap-2 overflow-x-auto no-scrollbar">
@@ -319,14 +447,21 @@ export function WorkoutPage() {
                 <button
                   key={item.id}
                   type="button"
-                  onClick={() => setPlanId(item.id)}
+                  onClick={() => setTrainingPlan(item.id)}
                   className={`shrink-0 rounded-full px-3 py-1.5 text-sm ${
-                    planId === item.id ? "bg-lift text-ink" : "bg-ink text-fog"
+                    state.trainingPlanId === item.id ? "bg-lift text-ink" : "bg-ink text-fog"
                   }`}
                 >
                   {item.name}
                 </button>
               ))}
+              <button
+                type="button"
+                onClick={() => setTrainingPlan(undefined)}
+                className="shrink-0 rounded-full px-3 py-1.5 text-sm text-fog"
+              >
+                Clear
+              </button>
             </div>
             <div className="space-y-2">
               {plan.days.map((day) => {
@@ -368,7 +503,7 @@ export function WorkoutPage() {
             {todayDay ? `Today: ${todayDay.title} · ${todayDay.focus}` : "Rest day on this plan."}
           </p>
         )}
-        {todayDay ? (
+        {plan && todayDay ? (
           <button
             type="button"
             onClick={() => startPlanDay(todayDay, plan)}
@@ -376,7 +511,7 @@ export function WorkoutPage() {
           >
             Start today · {todayDay.title}
           </button>
-        ) : planOpen ? (
+        ) : plan && planOpen ? (
           <p className="mt-3 text-center text-sm text-fog">Rest day on this plan. Pick another session above.</p>
         ) : null}
       </Card>
@@ -396,6 +531,9 @@ export function WorkoutPage() {
       </div>
       <Card>
         <h3 className="mb-3 font-semibold">History</h3>
+        {history.length === 0 ? (
+          <p className="text-sm text-fog">No workouts logged yet.</p>
+        ) : (
         <ul className="space-y-3">
           {history.slice(0, 10).map((workout) => {
             const sets = workout.exercises.reduce((sum, exercise) => sum + exercise.sets.length, 0);
@@ -412,6 +550,7 @@ export function WorkoutPage() {
             );
           })}
         </ul>
+        )}
       </Card>
       <p className="px-1 text-center text-[11px] text-fog">
         Exercise art by Bryl Lim / Everkinetic, CC BY-SA 4.0 · @bryllim/workout-guide

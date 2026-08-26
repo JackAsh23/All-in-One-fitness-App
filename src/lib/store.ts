@@ -54,6 +54,7 @@ function migrate(raw: Record<string, unknown>): AppState | null {
       startWeightKg: profile.startWeightKg ?? sortedWeights[0]?.kg,
       currentWeightKg: profile.currentWeightKg ?? sortedWeights[sortedWeights.length - 1]?.kg,
       targetWeightKg: profile.targetWeightKg ?? (sortedWeights[0] ? Math.round((sortedWeights[0].kg - 4) * 10) / 10 : 74),
+      restSec: typeof profile.restSec === "number" && profile.restSec > 0 ? profile.restSec : 90,
     },
     integrations: Array.isArray(base.integrations) ? base.integrations : defaultIntegrations(),
     autoSync: typeof base.autoSync === "boolean" ? base.autoSync : true,
@@ -66,6 +67,7 @@ function migrate(raw: Record<string, unknown>): AppState | null {
     strava: base.strava as StravaAuth | undefined,
     dataMode,
     savedAt: typeof base.savedAt === "string" ? base.savedAt : undefined,
+    trainingPlanId: typeof base.trainingPlanId === "string" ? base.trainingPlanId : undefined,
   };
 }
 
@@ -202,6 +204,10 @@ export function resetDemo() {
 
 export function startFresh() {
   emit(createBlankState());
+}
+
+export function setTrainingPlan(id: string | undefined) {
+  emit({ ...state, trainingPlanId: id });
 }
 
 const BACKUP_VERSION = 6;

@@ -38,6 +38,7 @@ export type Profile = {
   stepGoal: number;
   goalMode: GoalMode;
   priorities: Priorities;
+  restSec?: number;
   startWeightKg?: number;
   currentWeightKg?: number;
   targetWeightKg?: number;
@@ -57,6 +58,7 @@ export type RoutePlan = {
   points: GeoPoint[];
   distanceKm: number;
   preset?: boolean;
+  waypoints?: GeoPoint[];
 };
 
 export type RunLog = {
@@ -77,6 +79,7 @@ export type RunLog = {
 export type WorkoutSet = {
   reps: number;
   kg: number;
+  durationSec?: number;
 };
 
 export type WorkoutExercise = {
@@ -167,6 +170,8 @@ export type AppState = {
   dataMode?: DataMode;
   /** ISO timestamp of last save; used to merge localStorage vs IndexedDB. */
   savedAt?: string;
+  /** Selected weekly split; empty after Start fresh until the user picks one. */
+  trainingPlanId?: string;
 };
 
 export type DayParts = {
