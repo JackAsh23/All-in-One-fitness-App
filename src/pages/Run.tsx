@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { Footprints, MapPinned, Navigation, PersonStanding } from "lucide-react";
 import { ActivityMap } from "../components/ActivityMap";
 import { BackButton } from "../components/BackButton";
@@ -17,6 +17,7 @@ type Phase = "home" | "gps" | "plan" | "live";
 
 export function RunPage() {
   const state = useAppState();
+  const [searchParams, setSearchParams] = useSearchParams();
   const today = todayISO();
   const [kind, setKind] = useState<SportKind>("run");
   const [phase, setPhase] = useState<Phase>("home");
@@ -85,6 +86,12 @@ export function RunPage() {
       setGpsError(error instanceof Error ? error.message : "GPS is required to start.");
     }
   }
+
+  useEffect(() => {
+    if (searchParams.get("start") !== "1") return;
+    setSearchParams({}, { replace: true });
+    void unlockGps("live", "run");
+  }, []);
 
   function startWatch(origin: GeoPoint) {
     watchOff.current?.();

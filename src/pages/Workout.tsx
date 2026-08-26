@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useSearchParams } from "react-router-dom";
 import { ChevronDown, ChevronUp, Images, Plus, Timer } from "lucide-react";
 import { BackButton } from "../components/BackButton";
 import { Card } from "../components/Heatmap";
@@ -17,6 +17,7 @@ const REST_DEFAULT = 90;
 export function WorkoutPage() {
   const state = useAppState();
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [session, setSession] = useState<null | { template: string; exercises: WorkoutExercise[]; started: number }>(
     null,
   );
@@ -51,6 +52,13 @@ export function WorkoutPage() {
     startExercises("Custom Workout", [{ name: startExercise, sets: [] }]);
     window.history.replaceState({}, "");
   }, [location.state]);
+
+  useEffect(() => {
+    if (searchParams.get("start") !== "1") return;
+    setSearchParams({}, { replace: true });
+    if (todayDay) startPlanDay(todayDay, plan);
+    else startTemplate("upper");
+  }, []);
 
   function startExercises(template: string, exercises: WorkoutExercise[]) {
     setSession({ template, started: Date.now(), exercises });

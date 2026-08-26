@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Barcode, Camera, Plus, ScanLine, Search, Star, Weight } from "lucide-react";
 import { BarcodeSheet } from "../components/BarcodeSheet";
 import { Card } from "../components/Heatmap";
@@ -38,6 +39,7 @@ type Chooser = "closed" | "menu" | "search" | "quick";
 
 export function NutritionPage() {
   const state = useAppState();
+  const [searchParams, setSearchParams] = useSearchParams();
   const today = todayISO();
   const [viewDate, setViewDate] = useState(today);
   const [query, setQuery] = useState("");
@@ -76,6 +78,12 @@ export function NutritionPage() {
     window.addEventListener("one-life-log-food", openLog);
     return () => window.removeEventListener("one-life-log-food", openLog);
   }, []);
+
+  useEffect(() => {
+    if (searchParams.get("log") !== "1") return;
+    setChooser("menu");
+    setSearchParams({}, { replace: true });
+  }, [searchParams, setSearchParams]);
 
   const results = useMemo(() => {
     const base = category ? FOODS.filter((food) => food.category === category) : FOODS;
