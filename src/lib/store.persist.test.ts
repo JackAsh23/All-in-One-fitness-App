@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createBlankState, createDemoState } from "./demo";
+import { looksLikeSeededDemo } from "./persistChoice";
 
 const STORAGE_KEY = "one-life-fitness-v6";
 
@@ -127,6 +128,46 @@ describe("store persist across updates", () => {
     expect(memory.writes.length).toBeGreaterThan(0);
     const last = memory.writes[memory.writes.length - 1] as { foods: { name: string }[] };
     expect(last.foods[0]?.name).toBe("Adobo");
+  });
+
+  it("ignores a demo year left in localStorage after Get latest", async () => {
+    memory.ls.set(STORAGE_KEY, JSON.stringify(createDemoState()));
+
+    const store = await import("./store");
+    await store.initStore();
+
+    expect(looksLikeSeededDemo(store.getState())).toBe(false);
+    expect(store.getState().runs).toEqual([]);
+    expect(store.getState().dataMode).toBe("live");
+  });
+
+  it("recovers live IndexedDB data even if localStorage still has the demo year", async () => {
+    memory.ls.set(STORAGE_KEY, JSON.stringify(createDemoState()));
+    memory.idb = {
+      ...createBlankState(),
+      dataMode: "live" as const,
+      savedAt: "2026-08-26T10:00:00.000Z",
+      foods: [
+        {
+          id: "food_live",
+          date: "2026-08-26",
+          time: "12:00",
+          meal: "lunch" as const,
+          name: "Sinigang",
+          grams: 400,
+          calories: 380,
+          protein: 32,
+          carbs: 22,
+          fat: 12,
+        },
+      ],
+    };
+
+    const store = await import("./store");
+    await store.initStore();
+
+    expect(store.getState().foods[0]?.name).toBe("Sinigang");
+    expect(looksLikeSeededDemo(store.getState())).toBe(false);
   });
 
   it("keeps Start fresh live data instead of reloading the demo year from IndexedDB", async () => {

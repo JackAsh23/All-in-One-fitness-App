@@ -75,10 +75,9 @@ function load(): AppState {
       const raw = localStorage.getItem(key);
       if (!raw) continue;
       const parsed = migrate(JSON.parse(raw) as Record<string, unknown>);
-      if (parsed) {
-        if (key !== STORAGE_KEY) localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
-        return parsed;
-      }
+      if (!parsed || looksLikeSeededDemo(parsed)) continue;
+      if (key !== STORAGE_KEY) localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
+      return parsed;
     } catch {
       /* try next key */
     }
@@ -165,7 +164,8 @@ async function hydrateFromIndexedDb() {
     const migrated = migrate(raw as Record<string, unknown>);
     if (!migrated) return;
     if (mutatedSinceLoad) return;
-    state = preferPersistedState(state, migrated);
+    const next = preferPersistedState(state, migrated);
+    state = looksLikeSeededDemo(next) ? createBlankState() : next;
     notify();
   } catch {
     /* keep localStorage snapshot */
@@ -184,7 +184,7 @@ async function hydrateAndReady() {
     persistReady = true;
     persist();
   }
-  if (state.integrations.some((item) => item.connected)) {
+  if (state.integrations.some((item) => item.connected) && !looksLikeSeededDemo(state)) {
     void syncNow(true);
   }
 }

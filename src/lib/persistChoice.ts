@@ -24,15 +24,16 @@ export function isVirginBlank(state: AppState): boolean {
 
 /**
  * Pick which snapshot to keep when localStorage and IndexedDB disagree.
- * Live data always beats the seeded demo year. A first-load blank yields to whatever was saved.
+ * The seeded demo year never wins over live or empty tracking data.
  */
 export function preferPersistedState(local: AppState, remote: AppState): AppState {
-  if (isVirginBlank(local) && !isVirginBlank(remote)) return remote;
-  if (isVirginBlank(remote) && !isVirginBlank(local)) return local;
-
   const localDemo = looksLikeSeededDemo(local);
   const remoteDemo = looksLikeSeededDemo(remote);
-  if (localDemo !== remoteDemo) return localDemo ? remote : local;
+  if (remoteDemo && !localDemo) return local;
+  if (localDemo && !remoteDemo) return remote;
+
+  if (isVirginBlank(local) && !isVirginBlank(remote)) return remote;
+  if (isVirginBlank(remote) && !isVirginBlank(local)) return local;
 
   const localAt = local.savedAt ?? "";
   const remoteAt = remote.savedAt ?? "";

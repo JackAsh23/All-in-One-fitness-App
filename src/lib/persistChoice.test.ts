@@ -33,6 +33,13 @@ describe("persistChoice", () => {
     expect(preferPersistedState(createBlankState(), live)).toEqual(live);
   });
 
+  it("does not restore the demo year onto an empty first load", () => {
+    const chosen = preferPersistedState(createBlankState(), createDemoState());
+    expect(looksLikeSeededDemo(chosen)).toBe(false);
+    expect(chosen.runs).toEqual([]);
+    expect(chosen.foods).toEqual([]);
+  });
+
   it("keeps a saved live blank instead of restoring the demo year after an update", () => {
     const liveBlank = {
       ...createBlankState(),
