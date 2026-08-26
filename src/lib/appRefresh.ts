@@ -1,4 +1,4 @@
-/** Hard refresh: drop service worker + caches, then reload. Use when the app looks stale on iOS. */
+/** Hard refresh: drop service worker + caches, then reload from the network. */
 export async function hardRefreshApp() {
   if ("serviceWorker" in navigator) {
     const registrations = await navigator.serviceWorker.getRegistrations();
@@ -8,5 +8,8 @@ export async function hardRefreshApp() {
     const keys = await caches.keys();
     await Promise.all(keys.map((key) => caches.delete(key)));
   }
-  window.location.reload();
+
+  const url = new URL(window.location.href);
+  url.searchParams.set("_refresh", String(Date.now()));
+  window.location.replace(url.toString());
 }

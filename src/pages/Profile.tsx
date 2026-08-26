@@ -96,7 +96,7 @@ export function ProfilePage() {
             onClick={() => void hardRefreshApp()}
             className="w-full rounded-2xl border border-line py-3 text-sm text-fog"
           >
-            Get latest app version
+            Get latest app version (v{APP_VERSION})
           </button>
         </div>
       </Card>

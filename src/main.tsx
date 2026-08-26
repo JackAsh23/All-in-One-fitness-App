@@ -13,10 +13,16 @@ import "./index.css";
 ensureGithubPagesPath();
 
 if (import.meta.env.PROD && !Capacitor.isNativePlatform()) {
-  registerSW({
+  const updateSW = registerSW({
     immediate: true,
     onNeedRefresh() {
-      window.location.reload();
+      void updateSW(true);
+    },
+    onRegistered(registration) {
+      if (!registration) return;
+      window.setInterval(() => {
+        void registration.update();
+      }, 60_000);
     },
   });
 }
