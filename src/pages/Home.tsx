@@ -6,7 +6,7 @@ import { MacroBar, ProgressRing } from "../components/Progress";
 import { SyncBanner } from "../components/SyncBanner";
 import { formatDuration, formatLongDate, formatPace, formatTimeLabel, todayISO } from "../lib/dates";
 import { currentStreak, summarizeDay } from "../lib/scoring";
-import { bumpSteps, useAppState } from "../lib/store";
+import { useAppState } from "../lib/store";
 
 export function HomePage() {
   const state = useAppState();
@@ -146,20 +146,14 @@ export function HomePage() {
           sub={`${day.protein}g protein`}
           color="text-eat"
         />
-        <button
-          type="button"
-          onClick={() => bumpSteps(today, 1000)}
-          className="rounded-3xl border border-line bg-card p-4 text-left"
-        >
-          <div className="mb-3 flex items-center justify-between text-step">
-            <Footprints size={18} />
-            <span className="text-[11px] text-fog">+1000 manual</span>
-          </div>
-          <p className="text-xs uppercase tracking-wide text-fog">Steps</p>
-          <p className="text-xl font-semibold">
-            {day.steps.toLocaleString()} / {state.profile.stepGoal.toLocaleString()}
-          </p>
-        </button>
+        <StatTile
+          to="/consistency"
+          icon={<Footprints size={18} />}
+          label="Steps"
+          value={`${day.steps.toLocaleString()} / ${state.profile.stepGoal.toLocaleString()}`}
+          sub="Today’s total"
+          color="text-step"
+        />
       </div>
 
       <Card>
