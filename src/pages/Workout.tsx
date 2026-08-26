@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
 import { ChevronDown, ChevronUp, Images, Plus, Timer } from "lucide-react";
 import { BackButton } from "../components/BackButton";
@@ -8,9 +8,10 @@ import { Sheet } from "../components/Sheet";
 import { GUIDE_MUSCLES, searchGuideExercises } from "../lib/exerciseArt";
 import { EXERCISE_CATALOG, TEMPLATES } from "../lib/exercises";
 import { formatShortDate, nowTime, todayISO, uid, weekdayIndex } from "../lib/dates";
-import { addWorkout, setTrainingPlan, updateProfile, useAppState } from "../lib/store";
-import { TRAINING_PLANS, type PlanDay, type TrainingPlan } from "../lib/trainingPlans";
+import { addWorkout, removeCustomPlan, saveCustomPlan, setTrainingPlan, updateProfile, useAppState } from "../lib/store";
+import { TRAINING_PLANS, resolvePlan, type PlanDay, type TrainingPlan } from "../lib/trainingPlans";
 import { formatWorkoutSet, isTimedExercise, parseTimedTarget, sessionHasLoggedSets } from "../lib/exerciseTiming";
+import { CustomPlanSheet } from "../components/CustomPlanSheet";
 import type { WorkoutExercise } from "../lib/types";
 
 const REST_CHOICES = [30, 45, 60, 90, 120, 180];
@@ -29,14 +30,22 @@ export function WorkoutPage() {
   const [kg, setKg] = useState("20");
   const [reps, setReps] = useState("10");
   const [holdSec, setHoldSec] = useState("45");
-  const [holdElapsed, setHoldElapsed] = useState(0);
+  const [holdRemaining, setHoldRemaining] = useState(45);
   const [holdRunning, setHoldRunning] = useState(false);
   const [activeExercise, setActiveExercise] = useState(0);
   const [planOpen, setPlanOpen] = useState(true);
+  const [planBuilderOpen, setPlanBuilderOpen] = useState(false);
   const restSec = state.profile.restSec ?? 90;
-  const plan = TRAINING_PLANS.find((item) => item.id === state.trainingPlanId) ?? null;
+  const customPlans = state.customPlans ?? [];
+  const plan = resolvePlan(state.trainingPlanId, customPlans);
   const todayDow = weekdayIndex(todayISO());
   const todayDay = plan?.days.find((day) => day.weekday === todayDow) ?? null;
+  const sessionRef = useRef(session);
+  sessionRef.current = session;
+  const activeRef = useRef(activeExercise);
+  activeRef.current = activeExercise;
+  const holdLoggedRef = useRef(false);
+  const holdTarget = Math.max(1, Number(holdSec) || 45);
 
   useEffect(() => {
     if (rest <= 0) return;
@@ -46,9 +55,27 @@ export function WorkoutPage() {
 
   useEffect(() => {
     if (!holdRunning) return;
-    const id = window.setInterval(() => setHoldElapsed((value) => value + 1), 1000);
+    const id = window.setInterval(() => {
+      setHoldRemaining((value) => {
+        if (value <= 1) {
+          window.clearInterval(id);
+          return 0;
+        }
+        return value - 1;
+      });
+    }, 1000);
     return () => window.clearInterval(id);
   }, [holdRunning]);
+
+  useEffect(() => {
+    if (!holdRunning) {
+      holdLoggedRef.current = false;
+      return;
+    }
+    if (holdRemaining > 0 || holdLoggedRef.current) return;
+    holdLoggedRef.current = true;
+    logTimedSet(holdTarget);
+  }, [holdRunning, holdRemaining, holdTarget]);
 
   const history = useMemo(
     () => [...state.workouts].sort((a, b) => `${b.date}${b.time}`.localeCompare(`${a.date}${a.time}`)),
@@ -70,12 +97,14 @@ export function WorkoutPage() {
 
   function syncInputsFor(exercise?: WorkoutExercise) {
     setHoldRunning(false);
-    setHoldElapsed(0);
     if (!exercise) return;
     const timed = isTimedExercise(exercise.name, exercise.targetReps);
     const target = parseTimedTarget(exercise.targetReps);
-    if (timed) setHoldSec(String(target ?? 45));
-    else if (exercise.targetReps) {
+    if (timed) {
+      const seconds = target ?? 45;
+      setHoldSec(String(seconds));
+      setHoldRemaining(seconds);
+    } else if (exercise.targetReps) {
       const n = Number.parseInt(exercise.targetReps, 10);
       if (Number.isFinite(n) && parseTimedTarget(exercise.targetReps) == null) setReps(String(n));
     }
@@ -109,18 +138,30 @@ export function WorkoutPage() {
     );
   }
 
+  function logTimedSet(seconds: number) {
+    const currentSession = sessionRef.current;
+    if (!currentSession || seconds <= 0) return;
+    const next = structuredClone(currentSession);
+    const exercise = next.exercises[activeRef.current];
+    if (!exercise) return;
+    exercise.sets.push({ kg: 0, reps: 0, durationSec: seconds });
+    setSession(next);
+    setHoldRunning(false);
+    setHoldRemaining(holdTarget);
+    setRest(restSec);
+  }
+
   function logSet() {
-    if (!session) return;
+    if (!session || holdRunning) return;
     const next = structuredClone(session);
     const exercise = next.exercises[activeExercise];
     if (!exercise) return;
     const timed = isTimedExercise(exercise.name, exercise.targetReps);
     if (timed) {
-      const seconds = holdElapsed > 0 ? holdElapsed : Number(holdSec) || 0;
+      const seconds = holdRemaining < holdTarget ? holdTarget - holdRemaining : holdTarget;
       if (!seconds) return;
       exercise.sets.push({ kg: 0, reps: 0, durationSec: seconds });
-      setHoldRunning(false);
-      setHoldElapsed(0);
+      setHoldRemaining(holdTarget);
     } else {
       exercise.sets.push({ kg: Number(kg) || 0, reps: Number(reps) || 0 });
     }
@@ -177,6 +218,7 @@ export function WorkoutPage() {
             onClick={() => {
               setSession(null);
               setRest(0);
+              setHoldRunning(false);
             }}
           />
           <div className="flex items-center justify-between gap-2">
@@ -207,26 +249,25 @@ export function WorkoutPage() {
                 +15s
               </button>
             </div>
+            <div className="mt-3 flex gap-2 overflow-x-auto no-scrollbar">
+              {REST_CHOICES.map((seconds) => (
+                <button
+                  key={seconds}
+                  type="button"
+                  onClick={() => {
+                    updateProfile({ restSec: seconds });
+                    setRest(seconds);
+                  }}
+                  className={`shrink-0 rounded-full px-3 py-1.5 text-sm ${
+                    restSec === seconds ? "bg-lift text-ink" : "bg-ink text-fog"
+                  }`}
+                >
+                  {seconds}s
+                </button>
+              ))}
+            </div>
           </Card>
         ) : null}
-
-        <Card>
-          <p className="mb-2 text-xs uppercase tracking-wide text-fog">Rest between sets</p>
-          <div className="flex gap-2 overflow-x-auto no-scrollbar">
-            {REST_CHOICES.map((seconds) => (
-              <button
-                key={seconds}
-                type="button"
-                onClick={() => updateProfile({ restSec: seconds })}
-                className={`shrink-0 rounded-full px-3 py-1.5 text-sm ${
-                  restSec === seconds ? "bg-lift text-ink" : "bg-ink text-fog"
-                }`}
-              >
-                {seconds}s
-              </button>
-            ))}
-          </div>
-        </Card>
 
         <div className="flex gap-2 overflow-x-auto no-scrollbar">
           {session.exercises.map((exercise, index) => (
@@ -289,49 +330,68 @@ export function WorkoutPage() {
             )}
             {isTimedExercise(current.name, current.targetReps) ? (
               <div className="space-y-3">
-                <div className="rounded-2xl bg-ink px-3 py-4 text-center">
-                  <p className="text-xs uppercase tracking-wide text-fog">Hold timer</p>
-                  <p className="font-mono text-5xl">{holdRunning || holdElapsed > 0 ? holdElapsed : holdSec}s</p>
-                  {parseTimedTarget(current.targetReps) ? (
-                    <p className="mt-1 text-sm text-fog">Target {parseTimedTarget(current.targetReps)}s</p>
-                  ) : null}
+                <div className="rounded-3xl bg-ink px-4 py-6 text-center">
+                  <p className="text-xs uppercase tracking-[0.2em] text-lift">
+                    {holdRunning ? "Hold" : "Ready"}
+                  </p>
+                  <p className="mt-1 font-mono text-6xl font-semibold tabular-nums">{holdRemaining}s</p>
+                  <div className="mt-4 h-2 overflow-hidden rounded-full bg-card">
+                    <div
+                      className="h-full rounded-full bg-lift transition-[width] duration-1000 ease-linear"
+                      style={{
+                        width: `${Math.min(100, Math.round(((holdTarget - holdRemaining) / holdTarget) * 100))}%`,
+                      }}
+                    />
+                  </div>
+                  <p className="mt-2 text-sm text-fog">
+                    {holdRunning ? "Logs automatically at 0" : `Target ${holdTarget}s`}
+                  </p>
                 </div>
                 <label className="text-sm text-fog">
                   Target seconds
                   <input
                     value={holdSec}
-                    onChange={(event) => setHoldSec(event.target.value)}
-                    className="mt-1 w-full rounded-2xl border border-line bg-ink px-3 py-3 text-snow"
+                    disabled={holdRunning}
+                    onChange={(event) => {
+                      setHoldSec(event.target.value);
+                      const next = Math.max(1, Number(event.target.value) || 45);
+                      if (!holdRunning) setHoldRemaining(next);
+                    }}
+                    className="mt-1 w-full rounded-2xl border border-line bg-ink px-3 py-3 text-snow disabled:opacity-50"
                     inputMode="numeric"
                   />
                 </label>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
-                    className="rounded-2xl bg-ink py-3 font-semibold"
+                    className="rounded-2xl bg-lift py-3 font-semibold text-ink disabled:opacity-40"
+                    disabled={holdRunning}
                     onClick={() => {
-                      if (holdRunning) setHoldRunning(false);
-                      else {
-                        if (holdElapsed === 0) setHoldElapsed(0);
-                        setHoldRunning(true);
-                      }
+                      setHoldRemaining(holdTarget);
+                      setHoldRunning(true);
                     }}
                   >
-                    {holdRunning ? "Pause" : holdElapsed > 0 ? "Resume" : "Start timer"}
+                    Start timer
                   </button>
                   <button
                     type="button"
-                    className="rounded-2xl bg-card py-3"
+                    className="rounded-2xl bg-card py-3 disabled:opacity-40"
+                    disabled={!holdRunning}
                     onClick={() => {
                       setHoldRunning(false);
-                      setHoldElapsed(0);
+                      setHoldRemaining(holdTarget);
                     }}
                   >
-                    Reset
+                    Cancel
                   </button>
                 </div>
-                <button type="button" onClick={logSet} className="w-full rounded-2xl bg-lift py-3 font-semibold text-ink">
-                  Log hold
+                <button
+                  type="button"
+                  onClick={logSet}
+                  disabled={holdRunning}
+                  className="w-full rounded-2xl bg-lift/20 py-3 font-semibold text-lift disabled:opacity-40"
+                >
+                  {holdRunning ? "Logging at 0…" : "Log hold"}
                 </button>
               </div>
             ) : (
@@ -425,8 +485,18 @@ export function WorkoutPage() {
         </div>
         {!plan ? (
           <>
-            <p className="mt-3 text-sm text-fog">Empty until you pick a split. Your log stays blank until you start a session.</p>
+            <p className="mt-3 text-sm text-fog">Empty until you pick a split or build your own.</p>
             <div className="mt-3 flex flex-wrap gap-2">
+              {customPlans.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setTrainingPlan(item.id)}
+                  className="rounded-full bg-lift/20 px-3 py-1.5 text-sm text-lift"
+                >
+                  {item.name}
+                </button>
+              ))}
               {TRAINING_PLANS.map((item) => (
                 <button
                   key={item.id}
@@ -437,12 +507,31 @@ export function WorkoutPage() {
                   {item.name}
                 </button>
               ))}
+              <button
+                type="button"
+                onClick={() => setPlanBuilderOpen(true)}
+                className="rounded-full border border-lift/40 px-3 py-1.5 text-sm text-lift"
+              >
+                + Custom plan
+              </button>
             </div>
           </>
         ) : planOpen ? (
           <>
             <p className="mt-3 mb-3 text-xs text-fog">{plan.blurb}</p>
             <div className="mb-3 flex gap-2 overflow-x-auto no-scrollbar">
+              {customPlans.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setTrainingPlan(item.id)}
+                  className={`shrink-0 rounded-full px-3 py-1.5 text-sm ${
+                    state.trainingPlanId === item.id ? "bg-lift text-ink" : "bg-lift/20 text-lift"
+                  }`}
+                >
+                  {item.name}
+                </button>
+              ))}
               {TRAINING_PLANS.map((item) => (
                 <button
                   key={item.id}
@@ -457,11 +546,27 @@ export function WorkoutPage() {
               ))}
               <button
                 type="button"
+                onClick={() => setPlanBuilderOpen(true)}
+                className="shrink-0 rounded-full border border-lift/40 px-3 py-1.5 text-sm text-lift"
+              >
+                + Custom
+              </button>
+              <button
+                type="button"
                 onClick={() => setTrainingPlan(undefined)}
                 className="shrink-0 rounded-full px-3 py-1.5 text-sm text-fog"
               >
                 Clear
               </button>
+              {plan.custom ? (
+                <button
+                  type="button"
+                  onClick={() => removeCustomPlan(plan.id)}
+                  className="shrink-0 rounded-full px-3 py-1.5 text-sm text-run"
+                >
+                  Delete
+                </button>
+              ) : null}
             </div>
             <div className="space-y-2">
               {plan.days.map((day) => {
@@ -555,6 +660,11 @@ export function WorkoutPage() {
       <p className="px-1 text-center text-[11px] text-fog">
         Exercise art by Bryl Lim / Everkinetic, CC BY-SA 4.0 · @bryllim/workout-guide
       </p>
+      <CustomPlanSheet
+        open={planBuilderOpen}
+        onClose={() => setPlanBuilderOpen(false)}
+        onSave={saveCustomPlan}
+      />
     </div>
   );
 }

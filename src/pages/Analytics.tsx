@@ -22,8 +22,9 @@ import {
   weeklyWorkoutVolume,
   weightStats,
 } from "../lib/analytics";
+import { bmiCategory, bodyMassIndex } from "../lib/bmi";
 import { todayISO } from "../lib/dates";
-import { logWeight, useAppState } from "../lib/store";
+import { logWeight, updateProfile, useAppState } from "../lib/store";
 
 type Tab = "run" | "walk" | "lift" | "eat" | "weight" | "steps";
 
@@ -84,6 +85,9 @@ export function AnalyticsPage() {
   const weight = weightStats(state);
   const [weighIn, setWeighIn] = useState(String(weight.current ?? 76));
   const [weighDate, setWeighDate] = useState(todayISO());
+  const [heightCm, setHeightCm] = useState(String(state.profile.heightCm ?? ""));
+  const bmi = bodyMassIndex(weight.current ?? 0, Number(heightCm) || 0);
+  const bmiInfo = bmi != null ? bmiCategory(bmi) : null;
 
   return (
     <div className="space-y-4 animate-pop">
@@ -360,6 +364,45 @@ export function AnalyticsPage() {
             <p className="mt-2 text-xs text-fog">
               {weight.lost == null ? "Log a weigh-in to start the trend." : `${weight.lost >= 0 ? "Down" : "Up"} ${Math.abs(weight.lost)} kg from start · ${weight.progress}% to target`}
             </p>
+          </Card>
+          <Card>
+            <h3 className="mb-3 font-semibold">BMI</h3>
+            <label className="block text-sm text-fog">
+              Height (cm)
+              <input
+                value={heightCm}
+                onChange={(event) => setHeightCm(event.target.value)}
+                onBlur={() => {
+                  const cm = Number(heightCm);
+                  if (cm > 0) updateProfile({ heightCm: cm });
+                }}
+                className="mt-1 w-full rounded-2xl border border-line bg-ink px-3 py-3 text-snow"
+                inputMode="decimal"
+                placeholder="170"
+              />
+            </label>
+            {bmiInfo && bmi != null ? (
+              <div className="mt-4 rounded-2xl bg-ink px-3 py-4 text-center">
+                <p className="font-mono text-5xl font-semibold">{bmi}</p>
+                <p
+                  className={`mt-2 text-lg font-semibold ${
+                    bmiInfo.tone === "ok"
+                      ? "text-life"
+                      : bmiInfo.tone === "warn"
+                        ? "text-eat"
+                        : bmiInfo.tone === "high"
+                          ? "text-run"
+                          : "text-lift"
+                  }`}
+                >
+                  {bmiInfo.label}
+                </p>
+                <p className="mt-1 text-sm text-fog">{bmiInfo.detail}</p>
+                <p className="mt-3 text-xs text-fog">WHO adult ranges · uses your current weight</p>
+              </div>
+            ) : (
+              <p className="mt-3 text-sm text-fog">Add height and a weigh-in to see BMI.</p>
+            )}
           </Card>
           <Card>
             <h3 className="mb-3 font-semibold">Trend</h3>

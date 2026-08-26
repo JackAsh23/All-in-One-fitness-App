@@ -279,6 +279,7 @@ export function createDemoState(today = todayISO()): AppState {
     ],
     dataMode: "demo",
     trainingPlanId: "ppl",
+    customPlans: [],
   };
 }
 
@@ -312,5 +313,6 @@ export function createBlankState(): AppState {
     recentFoods: [],
     savedMeals: [],
     dataMode: "live",
+    customPlans: [],
   };
 }
