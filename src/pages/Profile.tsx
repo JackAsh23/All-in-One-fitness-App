@@ -4,7 +4,7 @@ import { Card } from "../components/Heatmap";
 import { GOAL_MODES } from "../lib/goalModes";
 import { defaultPriorities } from "../lib/scoring";
 import { hardRefreshApp } from "../lib/appRefresh";
-import { downloadBackup, importBackup, resetDemo, setGoalMode, updateProfile, useAppState } from "../lib/store";
+import { downloadBackup, importBackup, resetDemo, startFresh, setGoalMode, updateProfile, useAppState } from "../lib/store";
 import { APP_VERSION } from "../lib/version";
 import type { Priorities } from "../lib/types";
 
@@ -180,6 +180,21 @@ export function ProfilePage() {
       </Card>
       <button type="button" onClick={save} className="w-full rounded-3xl bg-life py-3 font-semibold text-ink">
         {saved ? "Saved" : "Save profile"}
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          if (
+            window.confirm(
+              "Start fresh? This clears demo runs, workouts, food, and weight. Export a backup first if you want to keep anything.",
+            )
+          ) {
+            startFresh();
+          }
+        }}
+        className="w-full rounded-3xl bg-life/15 py-3 font-semibold text-life"
+      >
+        Start fresh (my real data)
       </button>
       <button
         type="button"

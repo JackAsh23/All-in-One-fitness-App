@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from "react";
-import { createDemoState } from "./demo";
+import { createBlankState, createDemoState } from "./demo";
 import { defaultIntegrations } from "./integrations";
 import { defaultPriorities } from "./scoring";
 import { getFoodById } from "./nutrition";
@@ -157,6 +157,10 @@ async function hydrateFromIndexedDb() {
 
 export function resetDemo() {
   emit(createDemoState());
+}
+
+export function startFresh() {
+  emit(createBlankState());
 }
 
 const BACKUP_VERSION = 6;

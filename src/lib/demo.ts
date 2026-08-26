@@ -1,6 +1,6 @@
 import { addDays, todayISO, uid } from "./dates";
 import { macrosForGrams, FOODS } from "./foods";
-import { defaultIntegrations } from "./integrations";
+import { defaultIntegrations, disconnectedIntegrations } from "./integrations";
 import { defaultPriorities } from "./scoring";
 import type { AppState, FoodLog, RunLog, StepLog, WeightLog, WorkoutLog } from "./types";
 
@@ -276,5 +276,36 @@ export function createDemoState(today = todayISO()): AppState {
         ],
       },
     ],
+  };
+}
+
+/** Empty tracker for real daily use — keeps profile goals, no fake history. */
+export function createBlankState(): AppState {
+  return {
+    profile: {
+      name: "Jack",
+      calorieGoal: 1900,
+      proteinGoal: 140,
+      carbGoal: 220,
+      fatGoal: 60,
+      stepGoal: 10000,
+      startWeightKg: undefined,
+      currentWeightKg: undefined,
+      targetWeightKg: 74,
+      goalMode: "balanced",
+      priorities: defaultPriorities(),
+    },
+    runs: [],
+    workouts: [],
+    foods: [],
+    steps: [],
+    weightLogs: [],
+    savedRoutes: [],
+    integrations: disconnectedIntegrations(),
+    autoSync: false,
+    syncLog: [],
+    favoriteFoodIds: [],
+    recentFoods: [],
+    savedMeals: [],
   };
 }

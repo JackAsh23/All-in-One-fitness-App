@@ -53,6 +53,13 @@ export function defaultIntegrations(): Integration[] {
   }));
 }
 
+export function disconnectedIntegrations(): Integration[] {
+  return INTEGRATION_CATALOG.map((item) => ({
+    id: item.id,
+    connected: false,
+  }));
+}
+
 export function integrationMeta(id: IntegrationId) {
   return INTEGRATION_CATALOG.find((item) => item.id === id);
 }
