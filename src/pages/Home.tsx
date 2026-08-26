@@ -77,6 +77,10 @@ export function HomePage() {
         </Link>
       </div>
 
+      <p className="text-center text-sm text-fog">
+        {Math.max(0, state.profile.calorieGoal - day.calories)} kcal left · {Math.max(0, state.profile.proteinGoal - day.protein)}g protein left
+      </p>
+
       <SyncBanner />
 
       <Card className="bg-gradient-to-br from-card to-ink-2">

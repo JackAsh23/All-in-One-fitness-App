@@ -9,7 +9,7 @@ import { MonthCalendar } from "../components/MonthCalendar";
 import { PortionStepper } from "../components/PortionStepper";
 import { Sheet } from "../components/Sheet";
 import { resolveBarcode } from "../lib/barcodes";
-import { foodCategories, buildRecentList, getFoodById } from "../lib/nutrition";
+import { foodCategories, buildRecentList, getFoodById, defaultMealType } from "../lib/nutrition";
 import { FOODS, macrosForGrams, searchFoods } from "../lib/foods";
 import { weightStats } from "../lib/analytics";
 import {
@@ -44,7 +44,7 @@ export function NutritionPage() {
   const [viewDate, setViewDate] = useState(today);
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<string | null>(null);
-  const [meal, setMeal] = useState<MealType>("lunch");
+  const [meal, setMeal] = useState<MealType>(() => defaultMealType());
   const [grams, setGrams] = useState(150);
   const [chooser, setChooser] = useState<Chooser>("closed");
   const [barcodeOpen, setBarcodeOpen] = useState(false);

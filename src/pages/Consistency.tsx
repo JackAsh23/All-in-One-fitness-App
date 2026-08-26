@@ -47,6 +47,7 @@ export function ConsistencyPage() {
 
   const streak = currentStreak(today, (date) => summarizeDay(state, date).score >= 50);
   const selectedDay = summarizeDay(state, selected);
+  const hasHistory = state.runs.length + state.workouts.length + state.foods.length + state.weightLogs.length > 0;
   const activeMode = GOAL_MODES.find((m) => m.id === state.profile.goalMode) ?? GOAL_MODES[0];
 
   const pillars = [
@@ -68,6 +69,26 @@ export function ConsistencyPage() {
           Wrapped
         </Link>
       </div>
+
+      {!hasHistory ? (
+        <Card className="border-life/30 bg-life/5">
+          <p className="font-semibold">Heatmaps start empty</p>
+          <p className="mt-1 text-sm text-fog">
+            Log a run, a lift, or a meal today. The first green square is the whole point.
+          </p>
+          <div className="mt-3 flex gap-2">
+            <Link to="/run?start=1" className="rounded-full bg-run/20 px-3 py-1.5 text-sm text-run">
+              Run
+            </Link>
+            <Link to="/nutrition?log=1" className="rounded-full bg-eat/20 px-3 py-1.5 text-sm text-eat">
+              Eat
+            </Link>
+            <Link to="/workout?start=1" className="rounded-full bg-lift/20 px-3 py-1.5 text-sm text-lift">
+              Lift
+            </Link>
+          </div>
+        </Card>
+      ) : null}
 
       <Card className="border-life/30 bg-gradient-to-br from-life/10 to-card">
         <p className="text-xs uppercase tracking-[0.18em] text-fog">Today&apos;s score</p>
