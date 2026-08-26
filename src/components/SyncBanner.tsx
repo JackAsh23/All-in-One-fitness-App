@@ -15,16 +15,7 @@ export function SyncBanner() {
     return latest;
   }, undefined);
 
-  if (count === 0) {
-    return (
-      <Card className="border-life/30 bg-life/5">
-        <p className="text-sm text-fog">Connect Apple Health, Strava, or Garmin to auto-fill steps and runs.</p>
-        <Link to="/integrations" className="mt-2 inline-block text-sm font-medium text-life">
-          Set up integrations →
-        </Link>
-      </Card>
-    );
-  }
+  if (count === 0) return null;
 
   return (
     <Card className="border-step/30 bg-step/5">
