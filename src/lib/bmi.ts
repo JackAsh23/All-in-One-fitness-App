@@ -4,9 +4,9 @@ export type BmiCategory = {
   tone: "low" | "ok" | "warn" | "high";
 };
 
-/** WHO adult BMI classification. */
+/** WHO adult BMI classification. kg / m², rounded to one decimal. */
 export function bodyMassIndex(kg: number, heightCm: number): number | null {
-  if (!(kg > 0) || !(heightCm > 0)) return null;
+  if (!(kg > 0) || !(heightCm > 0) || !Number.isFinite(kg) || !Number.isFinite(heightCm)) return null;
   const meters = heightCm / 100;
   const bmi = kg / (meters * meters);
   if (!Number.isFinite(bmi)) return null;

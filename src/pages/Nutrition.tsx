@@ -26,6 +26,7 @@ import {
   useAppState,
 } from "../lib/store";
 import { todayISO } from "../lib/dates";
+import { parseDecimal } from "../lib/numbers";
 import type { MealType } from "../lib/types";
 
 const MEALS: { id: MealType; label: string; emoji: string }[] = [
@@ -222,7 +223,10 @@ export function NutritionPage() {
           <button
             type="button"
             className="rounded-2xl bg-eat py-2 text-sm font-semibold text-ink"
-            onClick={() => logWeight(viewDate, Number(weightInput))}
+            onClick={() => {
+              const kg = parseDecimal(weightInput);
+              if (kg != null && kg > 0) logWeight(viewDate, kg);
+            }}
           >
             Save weigh-in
           </button>

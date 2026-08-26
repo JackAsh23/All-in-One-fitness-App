@@ -24,6 +24,7 @@ import {
 } from "../lib/analytics";
 import { bmiCategory, bodyMassIndex } from "../lib/bmi";
 import { todayISO } from "../lib/dates";
+import { finitePositive, parseDecimal, parseHeightCm } from "../lib/numbers";
 import { logWeight, updateProfile, useAppState } from "../lib/store";
 
 type Tab = "run" | "walk" | "lift" | "eat" | "weight" | "steps";
@@ -83,13 +84,26 @@ export function AnalyticsPage() {
   const nutritionWeeks = nutritionWeeklyAverages(state);
   const adherence = macroAdherence(state);
   const weight = weightStats(state);
-  const [weighIn, setWeighIn] = useState(String(weight.current ?? 76));
+  const [weighIn, setWeighIn] = useState(
+    finitePositive(weight.current) != null ? String(weight.current) : "",
+  );
   const [weighDate, setWeighDate] = useState(todayISO());
   const [heightCm, setHeightCm] = useState(String(state.profile.heightCm ?? ""));
-  const heightValue = Number(heightCm) || state.profile.heightCm || 0;
-  const weightValue = weight.current ?? (Number(weighIn) || 0);
+  const heightValue = parseHeightCm(heightCm) ?? finitePositive(state.profile.heightCm) ?? 0;
+  const weightValue = parseDecimal(weighIn) ?? finitePositive(weight.current) ?? 0;
   const bmi = bodyMassIndex(weightValue, heightValue);
   const bmiInfo = bmi != null ? bmiCategory(bmi) : null;
+
+  function persistHeight(raw: string) {
+    const cm = parseHeightCm(raw);
+    if (cm != null && cm >= 80 && cm <= 250) updateProfile({ heightCm: cm });
+  }
+
+  function persistWeighIn() {
+    const kg = parseDecimal(weighIn);
+    if (kg != null && kg > 0) logWeight(weighDate, kg);
+    persistHeight(heightCm);
+  }
 
   return (
     <div className="space-y-4 animate-pop">
@@ -369,20 +383,40 @@ export function AnalyticsPage() {
           </Card>
           <Card>
             <h3 className="mb-3 font-semibold">BMI</h3>
-            <label className="block text-sm text-fog">
-              Height (cm)
-              <input
-                value={heightCm}
-                onChange={(event) => {
-                  setHeightCm(event.target.value);
-                  const cm = Number(event.target.value);
-                  if (cm >= 100 && cm <= 250) updateProfile({ heightCm: cm });
-                }}
-                className="mt-1 w-full rounded-2xl border border-line bg-ink px-3 py-3 text-snow"
-                inputMode="decimal"
-                placeholder="e.g. 170"
-              />
-            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <label className="block text-sm text-fog">
+                Height (cm)
+                <input
+                  value={heightCm}
+                  onChange={(event) => {
+                    setHeightCm(event.target.value);
+                    persistHeight(event.target.value);
+                  }}
+                  onBlur={(event) => persistHeight(event.target.value)}
+                  className="mt-1 w-full rounded-2xl border border-line bg-ink px-3 py-3 text-snow"
+                  inputMode="decimal"
+                  enterKeyHint="done"
+                  autoComplete="off"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  placeholder="e.g. 175.26"
+                />
+              </label>
+              <label className="block text-sm text-fog">
+                Weight (kg)
+                <input
+                  value={weighIn}
+                  onChange={(event) => setWeighIn(event.target.value)}
+                  className="mt-1 w-full rounded-2xl border border-line bg-ink px-3 py-3 text-snow"
+                  inputMode="decimal"
+                  enterKeyHint="done"
+                  autoComplete="off"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  placeholder="e.g. 73.94"
+                />
+              </label>
+            </div>
             {bmiInfo && bmi != null ? (
               <div className="mt-4 rounded-2xl bg-ink px-3 py-4 text-center">
                 <p className="font-mono text-5xl font-semibold">{bmi}</p>
@@ -400,10 +434,18 @@ export function AnalyticsPage() {
                   {bmiInfo.label}
                 </p>
                 <p className="mt-1 text-sm text-fog">{bmiInfo.detail}</p>
-                <p className="mt-3 text-xs text-fog">WHO adult ranges · uses your current weight</p>
+                <p className="mt-3 text-xs text-fog">
+                  {weightValue.toFixed(2)} kg · {heightValue.toFixed(2)} cm · WHO adult ranges
+                </p>
               </div>
             ) : (
-              <p className="mt-3 text-sm text-fog">Add height and a weigh-in to see BMI.</p>
+              <p className="mt-3 text-sm text-fog">
+                {heightValue <= 0 && weightValue <= 0
+                  ? "Enter height (cm) and weight (kg) to see BMI."
+                  : heightValue <= 0
+                    ? "Enter height in cm — decimals like 175.26 are fine."
+                    : "Enter weight in kg — decimals like 73.94 are fine."}
+              </p>
             )}
           </Card>
           <Card>
@@ -443,15 +485,14 @@ export function AnalyticsPage() {
                 onChange={(event) => setWeighIn(event.target.value)}
                 className="flex-1 rounded-2xl border border-line bg-ink px-3 py-3"
                 inputMode="decimal"
+                enterKeyHint="done"
+                autoComplete="off"
+                placeholder="kg"
               />
               <button
                 type="button"
                 className="rounded-2xl bg-step px-4 py-3 font-semibold text-ink"
-                onClick={() => {
-                  logWeight(weighDate, Number(weighIn));
-                  const cm = Number(heightCm);
-                  if (cm >= 100 && cm <= 250) updateProfile({ heightCm: cm });
-                }}
+                onClick={persistWeighIn}
               >
                 Log kg
               </button>

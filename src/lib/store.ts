@@ -555,7 +555,8 @@ export function removeRoute(id: string) {
 }
 
 export function logWeight(date: string, kg: number) {
-  const rounded = Math.round(kg * 10) / 10;
+  if (!Number.isFinite(kg) || kg <= 0) return;
+  const rounded = Math.round(kg * 100) / 100;
   const existing = state.weightLogs.find((entry) => entry.date === date);
   const weightLogs = existing
     ? state.weightLogs.map((entry) => (entry.date === date ? { ...entry, kg: rounded } : entry))
