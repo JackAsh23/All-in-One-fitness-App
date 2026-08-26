@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from "react";
 import { createBlankState, createDemoState } from "./demo";
 import { defaultIntegrations } from "./integrations";
+import { preferPersistedState, looksLikeSeededDemo } from "./persistChoice";
 import { defaultPriorities } from "./scoring";
 import { getFoodById } from "./nutrition";
 import { runSync } from "./sync";
@@ -12,6 +13,7 @@ import { goalModeMeta } from "./goalModes";
 import { idbReadState, idbWriteState } from "./idb";
 import type {
   AppState,
+  DataMode,
   FoodLog,
   GoalMode,
   IntegrationId,
@@ -25,12 +27,15 @@ import type {
   StravaAuth,
 } from "./types";
 
-const KEY = "one-life-fitness-v6";
+export const STORAGE_KEY = "one-life-fitness-v6";
 
 let state: AppState = load();
 const listeners = new Set<() => void>();
 let autoSyncTimer: number | undefined;
 let mutatedSinceLoad = false;
+let persistReady = false;
+let bootPromise: Promise<void> | undefined;
+let idbWriteQueue: Promise<void> = Promise.resolve();
 
 function migrate(raw: Record<string, unknown>): AppState | null {
   if (!raw?.profile || !Array.isArray(raw.runs)) return null;
@@ -38,6 +43,8 @@ function migrate(raw: Record<string, unknown>): AppState | null {
   const profile = base.profile as Profile;
   const weightLogs = Array.isArray(base.weightLogs) ? base.weightLogs : [];
   const sortedWeights = [...weightLogs].sort((a, b) => a.date.localeCompare(b.date));
+  const dataMode: DataMode | undefined =
+    base.dataMode === "live" || base.dataMode === "demo" ? base.dataMode : undefined;
   return {
     ...base,
     profile: {
@@ -57,42 +64,69 @@ function migrate(raw: Record<string, unknown>): AppState | null {
     savedRoutes: Array.isArray(base.savedRoutes) ? base.savedRoutes : [],
     weightLogs: Array.isArray(base.weightLogs) ? base.weightLogs : [],
     strava: base.strava as StravaAuth | undefined,
+    dataMode,
+    savedAt: typeof base.savedAt === "string" ? base.savedAt : undefined,
   };
 }
 
 function load(): AppState {
-  for (const key of [KEY, "one-life-fitness-v5", "one-life-fitness-v4", "one-life-fitness-v3", "one-life-fitness-v2", "one-life-fitness-v1"]) {
+  for (const key of [STORAGE_KEY, "one-life-fitness-v5", "one-life-fitness-v4", "one-life-fitness-v3", "one-life-fitness-v2", "one-life-fitness-v1"]) {
     try {
       const raw = localStorage.getItem(key);
       if (!raw) continue;
       const parsed = migrate(JSON.parse(raw) as Record<string, unknown>);
       if (parsed) {
-        if (key !== KEY) localStorage.setItem(KEY, JSON.stringify(parsed));
+        if (key !== STORAGE_KEY) localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
         return parsed;
       }
     } catch {
       /* try next key */
     }
   }
-  return createDemoState();
+  return createBlankState();
 }
 
-function persist() {
-  try {
-    localStorage.setItem(KEY, JSON.stringify(state));
-  } catch {
-    /* Safari private mode / quota */
-  }
-  void idbWriteState(state).catch(() => {
-    /* IndexedDB unavailable */
-  });
+function stamp(next: AppState, mode?: DataMode): AppState {
+  return {
+    ...next,
+    dataMode: mode ?? next.dataMode ?? (looksLikeSeededDemo(next) ? "demo" : "live"),
+    savedAt: new Date().toISOString(),
+  };
+}
+
+function notify() {
   listeners.forEach((listener) => listener());
   ensureAutoSyncTimer();
 }
 
+function queueIdbWrite(snapshot: AppState) {
+  idbWriteQueue = idbWriteQueue
+    .then(() => idbWriteState(snapshot))
+    .catch(() => {
+      /* IndexedDB unavailable */
+    });
+}
+
+function persist() {
+  if (!persistReady) {
+    notify();
+    return;
+  }
+  if (!state.savedAt) {
+    state = stamp(state);
+  }
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch {
+    /* Safari private mode / quota */
+  }
+  queueIdbWrite(state);
+  notify();
+}
+
 function emit(next: AppState) {
   mutatedSinceLoad = true;
-  state = next;
+  state = stamp(next);
   persist();
 }
 
@@ -124,35 +158,42 @@ export function useAppState(): AppState {
   return useSyncExternalStore(subscribe, getState, getState);
 }
 
-export function initStore() {
-  ensureAutoSyncTimer();
-  void hydrateFromIndexedDb();
+async function hydrateFromIndexedDb() {
+  try {
+    const raw = await idbReadState();
+    if (!raw || typeof raw !== "object") return;
+    const migrated = migrate(raw as Record<string, unknown>);
+    if (!migrated) return;
+    if (mutatedSinceLoad) return;
+    state = preferPersistedState(state, migrated);
+    notify();
+  } catch {
+    /* keep localStorage snapshot */
+  }
+}
+
+async function hydrateAndReady() {
+  try {
+    await Promise.race([
+      hydrateFromIndexedDb(),
+      new Promise<void>((resolve) => {
+        setTimeout(resolve, 3000);
+      }),
+    ]);
+  } finally {
+    persistReady = true;
+    persist();
+  }
   if (state.integrations.some((item) => item.connected)) {
     void syncNow(true);
   }
 }
 
-async function hydrateFromIndexedDb() {
-  try {
-    const raw = await idbReadState();
-    if (!raw || typeof raw !== "object") {
-      await idbWriteState(state);
-      return;
-    }
-    const migrated = migrate(raw as Record<string, unknown>);
-    if (!migrated) return;
-    if (mutatedSinceLoad) return;
-    state = migrated;
-    try {
-      localStorage.setItem(KEY, JSON.stringify(state));
-    } catch {
-      /* ignore */
-    }
-    listeners.forEach((listener) => listener());
-    ensureAutoSyncTimer();
-  } catch {
-    /* keep localStorage snapshot */
+export function initStore(): Promise<void> {
+  if (!bootPromise) {
+    bootPromise = hydrateAndReady();
   }
+  return bootPromise;
 }
 
 export function resetDemo() {

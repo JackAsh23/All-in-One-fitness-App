@@ -98,6 +98,7 @@ export function ProfilePage() {
           >
             Get latest app version (v{APP_VERSION})
           </button>
+          <p className="text-center text-xs text-fog">Saved runs, food, and lifts stay on this phone. You do not need Start fresh after an update.</p>
         </div>
       </Card>
       <Card>
@@ -186,7 +187,7 @@ export function ProfilePage() {
         onClick={() => {
           if (
             window.confirm(
-              "Start fresh? This clears demo runs, workouts, food, and weight. Export a backup first if you want to keep anything.",
+              "Clear all data on this phone? Export a backup first if you want to keep anything.",
             )
           ) {
             startFresh();
@@ -204,7 +205,7 @@ export function ProfilePage() {
         Reload demo year
       </button>
       <p className="px-1 text-center text-xs text-fog">
-        One Life v{APP_VERSION} — GPS runs, backup, barcode. Data stays on this device (IndexedDB).
+        One Life v{APP_VERSION} — GPS runs, backup, barcode. Data stays on this device across app updates.
       </p>
     </div>
   );

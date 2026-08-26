@@ -11,5 +11,6 @@ describe("createBlankState", () => {
     expect(state.weightLogs).toEqual([]);
     expect(state.integrations.every((item) => !item.connected)).toBe(true);
     expect(state.autoSync).toBe(false);
+    expect(state.dataMode).toBe("live");
   });
 });

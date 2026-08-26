@@ -19,7 +19,7 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:5173](http://localhost:5173). The first load seeds ~17 weeks of demo data in `localStorage` so the heatmaps look alive. Use **Reload demo year** on Profile to reset.
+Open [http://localhost:5173](http://localhost:5173). The first load starts empty so you can track for real. Use **Reload demo year** on Profile if you want the sample 17-week history.
 
 ```bash
 npm run build        # production build → dist/
@@ -30,6 +30,11 @@ npm test             # Vitest unit tests
 ```
 
 ## What’s in this prototype
+
+### v1.4 — Day-one use
+- **Start fresh** — empty tracker for real logging; **Reload demo year** is optional
+- **Updates keep your data** — Get latest does not restore the demo year over saved runs, food, or lifts
+- Home CTAs, meal by time of day, leftover kcal/protein
 
 ### v1.2 — PWA + backup + barcode
 - **PWA** — Add to Home Screen, offline shell, auto-updates
@@ -55,7 +60,7 @@ See [ROADMAP.md](ROADMAP.md) for v2 direction.
 
 1. Open **https://jackash23.github.io/All-in-One-fitness-App/** in Safari (iPhone) or Chrome (Android)
 2. **Add to Home Screen**
-3. Profile → **Get latest app version** after deploys
+3. Profile → **Get latest app version** after deploys (saved runs, food, and lifts stay on this phone)
 
 ## Native app (Capacitor)
 
