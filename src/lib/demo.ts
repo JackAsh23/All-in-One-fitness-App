@@ -221,6 +221,7 @@ export function createDemoState(today = todayISO()): AppState {
       targetWeightKg: 74,
       goalMode: "balanced",
       priorities: defaultPriorities(),
+      restSec: 90,
     },
     runs,
     workouts,
@@ -277,6 +278,7 @@ export function createDemoState(today = todayISO()): AppState {
       },
     ],
     dataMode: "demo",
+    trainingPlanId: "ppl",
   };
 }
 
@@ -295,6 +297,7 @@ export function createBlankState(): AppState {
       targetWeightKg: 74,
       goalMode: "balanced",
       priorities: defaultPriorities(),
+      restSec: 90,
     },
     runs: [],
     workouts: [],

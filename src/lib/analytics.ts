@@ -55,6 +55,14 @@ function weekStart(iso: string): string {
   return toISODate(date);
 }
 
+export function runsOnly(runs: RunLog[]): RunLog[] {
+  return runs.filter((run) => run.kind !== "walk");
+}
+
+export function walksOnly(runs: RunLog[]): RunLog[] {
+  return runs.filter((run) => run.kind === "walk");
+}
+
 export function weeklyRunKm(runs: RunLog[], weeks = 8): WeekBucket[] {
   const today = todayISO();
   const buckets: WeekBucket[] = [];
@@ -70,6 +78,30 @@ export function weeklyRunKm(runs: RunLog[], weeks = 8): WeekBucket[] {
     });
   }
   return buckets;
+}
+
+export function weeklySteps(logs: { date: string; steps: number }[], weeks = 8): WeekBucket[] {
+  const today = todayISO();
+  const buckets: WeekBucket[] = [];
+  for (let i = weeks - 1; i >= 0; i -= 1) {
+    const end = addDays(today, -i * 7);
+    const start = addDays(end, -6);
+    const total = logs
+      .filter((entry) => entry.date >= start && entry.date <= end)
+      .reduce((sum, entry) => sum + entry.steps, 0);
+    buckets.push({
+      label: formatShortDate(end).replace(",", ""),
+      value: total,
+    });
+  }
+  return buckets;
+}
+
+export function walkPersonalRecords(runs: RunLog[]): RunPR[] {
+  return runPersonalRecords(walksOnly(runs)).map((pr) => ({
+    ...pr,
+    label: pr.label.replace(/run/gi, "walk"),
+  }));
 }
 
 export function paceTrend(runs: RunLog[], limit = 10): { label: string; paceSec: number }[] {

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { Card } from "../components/Heatmap";
 import { MonthCalendar } from "../components/MonthCalendar";
 import { SparkBars, SparkLine } from "../components/SparkBars";
@@ -11,17 +11,30 @@ import {
   paceTrend,
   racePrediction,
   runPersonalRecords,
+  runsOnly,
   strengthProgression,
   topLiftExercise,
   trainingLoad,
+  walkPersonalRecords,
+  walksOnly,
   weeklyRunKm,
+  weeklySteps,
   weeklyWorkoutVolume,
   weightStats,
 } from "../lib/analytics";
 import { todayISO } from "../lib/dates";
 import { logWeight, useAppState } from "../lib/store";
 
-type Tab = "run" | "lift" | "eat" | "weight";
+type Tab = "run" | "walk" | "lift" | "eat" | "weight" | "steps";
+
+const TABS: [Tab, string][] = [
+  ["run", "Run"],
+  ["walk", "Walk"],
+  ["lift", "Lift"],
+  ["eat", "Eat"],
+  ["weight", "Weight"],
+  ["steps", "Steps"],
+];
 
 function formatPaceSec(secPerKm: number): string {
   const m = Math.floor(secPerKm / 60);
@@ -41,13 +54,26 @@ function deltaClass(n: number | null) {
 
 export function AnalyticsPage() {
   const state = useAppState();
-  const [tab, setTab] = useState<Tab>("run");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const raw = searchParams.get("tab");
+  const tab: Tab = TABS.some(([id]) => id === raw) ? (raw as Tab) : "run";
+  function setTab(next: Tab) {
+    setSearchParams(next === "run" ? {} : { tab: next }, { replace: true });
+  }
 
-  const mileage = weeklyRunKm(state.runs);
-  const paces = paceTrend(state.runs);
-  const prs = runPersonalRecords(state.runs);
-  const load = trainingLoad(state.runs);
-  const predictions = racePrediction(state.runs);
+  const runLogs = runsOnly(state.runs);
+  const walkLogs = walksOnly(state.runs);
+  const mileage = weeklyRunKm(runLogs);
+  const walkMileage = weeklyRunKm(walkLogs);
+  const paces = paceTrend(runLogs);
+  const walkPaces = paceTrend(walkLogs);
+  const prs = runPersonalRecords(runLogs);
+  const walkPrs = walkPersonalRecords(state.runs);
+  const load = trainingLoad(runLogs);
+  const walkLoad = trainingLoad(walkLogs);
+  const predictions = racePrediction(runLogs);
+  const stepWeeks = weeklySteps(state.steps);
+  const todaySteps = state.steps.find((entry) => entry.date === todayISO())?.steps ?? 0;
   const volume = weeklyWorkoutVolume(state.workouts);
   const liftPrs = exercisePersonalRecords(state.workouts);
   const muscles = muscleGroupFrequency(state.workouts);
@@ -71,15 +97,8 @@ export function AnalyticsPage() {
         </Link>
       </div>
 
-      <div className="grid grid-cols-4 gap-1 rounded-2xl bg-card p-1">
-        {(
-          [
-            ["run", "Run"],
-            ["lift", "Lift"],
-            ["eat", "Eat"],
-            ["weight", "Weight"],
-          ] as const
-        ).map(([id, label]) => (
+      <div className="grid grid-cols-3 gap-1 rounded-2xl bg-card p-1">
+        {TABS.map(([id, label]) => (
           <button
             key={id}
             type="button"
@@ -155,6 +174,77 @@ export function AnalyticsPage() {
               </ul>
             </Card>
           ) : null}
+        </>
+      ) : null}
+
+      {tab === "walk" ? (
+        <>
+          <Card>
+            <h3 className="mb-3 font-semibold">Weekly walking distance</h3>
+            <SparkBars data={walkMileage} unit="km" color="#5eead4" />
+          </Card>
+          <Card>
+            <h3 className="mb-1 font-semibold">Pace trend</h3>
+            <p className="mb-3 text-xs text-fog">Last {walkPaces.length} walks</p>
+            {walkPaces.length > 0 ? (
+              <SparkLine
+                points={walkPaces.map((p) => ({ label: p.label, value: p.paceSec }))}
+                color="#5eead4"
+                invertBetter
+                formatValue={formatPaceSec}
+              />
+            ) : (
+              <p className="text-sm text-fog">Log a walk on the Run tab to see pace here.</p>
+            )}
+          </Card>
+          <Card>
+            <h3 className="mb-3 font-semibold">Walking load</h3>
+            <div className="grid grid-cols-3 gap-2 text-center">
+              <div className="rounded-2xl bg-ink px-2 py-3">
+                <p className="text-xs text-fog">This week</p>
+                <p className="font-mono text-lg">{walkLoad.thisWeek} km</p>
+              </div>
+              <div className="rounded-2xl bg-ink px-2 py-3">
+                <p className="text-xs text-fog">Last week</p>
+                <p className="font-mono text-lg">{walkLoad.lastWeek} km</p>
+              </div>
+              <div className="rounded-2xl bg-ink px-2 py-3">
+                <p className="text-xs text-fog">Walks</p>
+                <p className="font-mono text-lg">{walkLogs.length}</p>
+              </div>
+            </div>
+          </Card>
+          <Card>
+            <h3 className="mb-3 font-semibold">Walk records</h3>
+            <ul className="space-y-2">
+              {walkPrs.map((pr) => (
+                <li key={pr.label} className="flex justify-between rounded-2xl bg-ink px-3 py-2">
+                  <span className="text-fog">{pr.label}</span>
+                  <span className="font-mono">{pr.value}</span>
+                </li>
+              ))}
+            </ul>
+          </Card>
+        </>
+      ) : null}
+
+      {tab === "steps" ? (
+        <>
+          <Card className="bg-gradient-to-br from-step/10 to-card">
+            <p className="text-xs uppercase tracking-[0.18em] text-step">Today</p>
+            <p className="font-mono text-5xl font-semibold">{todaySteps.toLocaleString()}</p>
+            <p className="text-sm text-fog">/ {state.profile.stepGoal.toLocaleString()} step goal</p>
+            <div className="mt-4 h-2 overflow-hidden rounded-full bg-ink">
+              <div
+                className="h-full rounded-full bg-step"
+                style={{ width: `${Math.min(100, Math.round((todaySteps / Math.max(state.profile.stepGoal, 1)) * 100))}%` }}
+              />
+            </div>
+          </Card>
+          <Card>
+            <h3 className="mb-3 font-semibold">Weekly steps</h3>
+            <SparkBars data={stepWeeks} unit="" color="#5eead4" />
+          </Card>
         </>
       ) : null}
 
