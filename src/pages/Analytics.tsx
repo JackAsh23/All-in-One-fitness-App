@@ -22,8 +22,9 @@ import {
   weeklyWorkoutVolume,
   weightStats,
 } from "../lib/analytics";
+import { bmiCategory, bodyMassIndex } from "../lib/bmi";
 import { todayISO } from "../lib/dates";
-import { logWeight, useAppState } from "../lib/store";
+import { logWeight, updateProfile, useAppState } from "../lib/store";
 
 type Tab = "run" | "walk" | "lift" | "eat" | "weight" | "steps";
 
@@ -84,6 +85,11 @@ export function AnalyticsPage() {
   const weight = weightStats(state);
   const [weighIn, setWeighIn] = useState(String(weight.current ?? 76));
   const [weighDate, setWeighDate] = useState(todayISO());
+  const [heightCm, setHeightCm] = useState(String(state.profile.heightCm ?? ""));
+  const heightValue = Number(heightCm) || state.profile.heightCm || 0;
+  const weightValue = weight.current ?? (Number(weighIn) || 0);
+  const bmi = bodyMassIndex(weightValue, heightValue);
+  const bmiInfo = bmi != null ? bmiCategory(bmi) : null;
 
   return (
     <div className="space-y-4 animate-pop">
@@ -362,6 +368,45 @@ export function AnalyticsPage() {
             </p>
           </Card>
           <Card>
+            <h3 className="mb-3 font-semibold">BMI</h3>
+            <label className="block text-sm text-fog">
+              Height (cm)
+              <input
+                value={heightCm}
+                onChange={(event) => {
+                  setHeightCm(event.target.value);
+                  const cm = Number(event.target.value);
+                  if (cm >= 100 && cm <= 250) updateProfile({ heightCm: cm });
+                }}
+                className="mt-1 w-full rounded-2xl border border-line bg-ink px-3 py-3 text-snow"
+                inputMode="decimal"
+                placeholder="e.g. 170"
+              />
+            </label>
+            {bmiInfo && bmi != null ? (
+              <div className="mt-4 rounded-2xl bg-ink px-3 py-4 text-center">
+                <p className="font-mono text-5xl font-semibold">{bmi}</p>
+                <p
+                  className={`mt-2 text-lg font-semibold ${
+                    bmiInfo.tone === "ok"
+                      ? "text-life"
+                      : bmiInfo.tone === "warn"
+                        ? "text-eat"
+                        : bmiInfo.tone === "high"
+                          ? "text-run"
+                          : "text-lift"
+                  }`}
+                >
+                  {bmiInfo.label}
+                </p>
+                <p className="mt-1 text-sm text-fog">{bmiInfo.detail}</p>
+                <p className="mt-3 text-xs text-fog">WHO adult ranges · uses your current weight</p>
+              </div>
+            ) : (
+              <p className="mt-3 text-sm text-fog">Add height and a weigh-in to see BMI.</p>
+            )}
+          </Card>
+          <Card>
             <h3 className="mb-3 font-semibold">Trend</h3>
             <SparkLine
               points={weight.points}
@@ -402,7 +447,11 @@ export function AnalyticsPage() {
               <button
                 type="button"
                 className="rounded-2xl bg-step px-4 py-3 font-semibold text-ink"
-                onClick={() => logWeight(weighDate, Number(weighIn))}
+                onClick={() => {
+                  logWeight(weighDate, Number(weighIn));
+                  const cm = Number(heightCm);
+                  if (cm >= 100 && cm <= 250) updateProfile({ heightCm: cm });
+                }}
               >
                 Log kg
               </button>

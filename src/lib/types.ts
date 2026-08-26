@@ -1,3 +1,5 @@
+import type { TrainingPlan } from "./trainingPlans";
+
 export type MealType = "breakfast" | "lunch" | "snacks" | "dinner";
 
 export type IntegrationId = "apple-health" | "health-connect" | "strava" | "garmin";
@@ -39,6 +41,7 @@ export type Profile = {
   goalMode: GoalMode;
   priorities: Priorities;
   restSec?: number;
+  heightCm?: number;
   startWeightKg?: number;
   currentWeightKg?: number;
   targetWeightKg?: number;
@@ -172,6 +175,7 @@ export type AppState = {
   savedAt?: string;
   /** Selected weekly split; empty after Start fresh until the user picks one. */
   trainingPlanId?: string;
+  customPlans?: TrainingPlan[];
 };
 
 export type DayParts = {

@@ -18,7 +18,23 @@ export type TrainingPlan = {
   blurb: string;
   daysPerWeek: number;
   days: PlanDay[];
+  custom?: boolean;
 };
+
+export const WEEKDAYS = [
+  { weekday: 1, label: "Mon" },
+  { weekday: 2, label: "Tue" },
+  { weekday: 3, label: "Wed" },
+  { weekday: 4, label: "Thu" },
+  { weekday: 5, label: "Fri" },
+  { weekday: 6, label: "Sat" },
+  { weekday: 0, label: "Sun" },
+] as const;
+
+export function resolvePlan(id: string | undefined, custom: TrainingPlan[] = []): TrainingPlan | null {
+  if (!id) return null;
+  return custom.find((item) => item.id === id) ?? TRAINING_PLANS.find((item) => item.id === id) ?? null;
+}
 
 export const TRAINING_PLANS: TrainingPlan[] = [
   {

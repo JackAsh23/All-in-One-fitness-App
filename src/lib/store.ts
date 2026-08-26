@@ -11,6 +11,7 @@ import { macrosForGrams } from "./foods";
 import { nowTime, todayISO, uid } from "./dates";
 import { goalModeMeta } from "./goalModes";
 import { idbReadState, idbWriteState } from "./idb";
+import type { TrainingPlan } from "./trainingPlans";
 import type {
   AppState,
   DataMode,
@@ -55,6 +56,7 @@ function migrate(raw: Record<string, unknown>): AppState | null {
       currentWeightKg: profile.currentWeightKg ?? sortedWeights[sortedWeights.length - 1]?.kg,
       targetWeightKg: profile.targetWeightKg ?? (sortedWeights[0] ? Math.round((sortedWeights[0].kg - 4) * 10) / 10 : 74),
       restSec: typeof profile.restSec === "number" && profile.restSec > 0 ? profile.restSec : 90,
+      heightCm: typeof profile.heightCm === "number" && profile.heightCm > 0 ? profile.heightCm : undefined,
     },
     integrations: Array.isArray(base.integrations) ? base.integrations : defaultIntegrations(),
     autoSync: typeof base.autoSync === "boolean" ? base.autoSync : true,
@@ -68,6 +70,7 @@ function migrate(raw: Record<string, unknown>): AppState | null {
     dataMode,
     savedAt: typeof base.savedAt === "string" ? base.savedAt : undefined,
     trainingPlanId: typeof base.trainingPlanId === "string" ? base.trainingPlanId : undefined,
+    customPlans: Array.isArray(base.customPlans) ? base.customPlans : [],
   };
 }
 
@@ -208,6 +211,19 @@ export function startFresh() {
 
 export function setTrainingPlan(id: string | undefined) {
   emit({ ...state, trainingPlanId: id });
+}
+
+export function saveCustomPlan(plan: TrainingPlan) {
+  const customPlans = [plan, ...(state.customPlans ?? []).filter((item) => item.id !== plan.id)];
+  emit({ ...state, customPlans, trainingPlanId: plan.id });
+}
+
+export function removeCustomPlan(id: string) {
+  emit({
+    ...state,
+    customPlans: (state.customPlans ?? []).filter((item) => item.id !== id),
+    trainingPlanId: state.trainingPlanId === id ? undefined : state.trainingPlanId,
+  });
 }
 
 const BACKUP_VERSION = 6;
