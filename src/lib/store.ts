@@ -332,7 +332,7 @@ export function logFoodItem(input: {
 export function addFood(food: FoodLog) {
   emit({
     ...state,
-    foods: state.foods.some((item) => item.id === food.id) ? state.foods : [food, ...state.foods],
+    foods: [food, ...state.foods.filter((item) => item.id !== food.id)],
     recentFoods: food.foodId ? trackRecent(food.foodId, food.grams) : state.recentFoods,
   });
 }

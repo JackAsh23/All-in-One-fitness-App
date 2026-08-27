@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { Check } from "lucide-react";
-import { subscribeToast, type ToastAction } from "../lib/toast";
+import { consumeToastAction, subscribeToast, type ToastAction } from "../lib/toast";
 
 const SHOW_MS = 2400;
 const UNDO_MS = 5000;
@@ -46,6 +46,11 @@ export function ToastHost() {
       <div
         className={`toast-pop pointer-events-auto flex items-center justify-center gap-3 rounded-2xl border border-life/40 bg-ink-2/95 px-4 py-3 text-center shadow-[0_12px_32px_rgba(0,0,0,0.45)] backdrop-blur${leaving ? " is-leaving" : ""}`}
         role="status"
+        onClick={() => {
+          if (!action) return;
+          consumeToastAction();
+          setLeaving(true);
+        }}
       >
         <p className="flex min-w-0 items-center justify-center gap-2 text-sm font-medium text-snow">
           <Check size={16} className="shrink-0 text-life" />
@@ -54,9 +59,11 @@ export function ToastHost() {
         {action ? (
           <button
             type="button"
+            data-testid="toast-undo"
             className="shrink-0 rounded-full bg-life/15 px-3 py-1.5 text-sm font-semibold text-life"
-            onClick={() => {
-              action.onClick();
+            onClick={(event) => {
+              event.stopPropagation();
+              consumeToastAction();
               setLeaving(true);
             }}
           >

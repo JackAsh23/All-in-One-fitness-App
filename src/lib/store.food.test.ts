@@ -48,5 +48,8 @@ describe("food log undo", () => {
       calories: 185,
       protein: 25,
     });
+    store.addFood({ ...food, calories: 200 });
+    expect(store.getState().foods.filter((item) => item.id === food.id)).toHaveLength(1);
+    expect(store.getState().foods[0].calories).toBe(200);
   });
 });

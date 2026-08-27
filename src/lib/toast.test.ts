@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { subscribeToast, showToast } from "./toast";
+import { subscribeToast, showToast, consumeToastAction } from "./toast";
 
 describe("toast", () => {
   it("notifies subscribers", () => {
@@ -20,5 +20,13 @@ describe("toast", () => {
     showToast("Workout deleted", { label: "Undo", onClick: () => undefined });
     stop();
     expect(labels).toEqual(["Undo"]);
+  });
+
+  it("runs the latest undo action once", () => {
+    let n = 0;
+    showToast("Food removed", { label: "Undo", onClick: () => n++ });
+    consumeToastAction();
+    consumeToastAction();
+    expect(n).toBe(1);
   });
 });
