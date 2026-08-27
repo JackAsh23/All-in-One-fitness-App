@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Sparkles } from "lucide-react";
+import { ConsistencyBoard } from "../components/ConsistencyBoard";
 import { buildWeeks, Card, HeatLegend, Heatmap } from "../components/Heatmap";
 import { addDays, daysInRange, formatLongDate, todayISO } from "../lib/dates";
 import { buildYearWrapped, recentMonthRecaps, scoreGrade, streakLabel } from "../lib/consistency";
@@ -13,6 +14,7 @@ import {
   summarizeDay,
   workoutHeatLevel,
 } from "../lib/scoring";
+import { stepHeatLevel } from "../lib/steps";
 import { setGoalMode, useAppState } from "../lib/store";
 
 export function ConsistencyPage() {
@@ -34,6 +36,7 @@ export function ConsistencyPage() {
           run: runHeatLevel(day.runKm),
           workout: workoutHeatLevel(day.workoutCount),
           meal: mealHeatLevel(day.mealsLogged),
+          activity: stepHeatLevel(day.steps, state.profile.stepGoal),
           summary: day,
         };
       }),
@@ -44,18 +47,13 @@ export function ConsistencyPage() {
   const runWeeks = buildWeeks(cells.map((cell) => ({ date: cell.date, level: cell.run })));
   const liftWeeks = buildWeeks(cells.map((cell) => ({ date: cell.date, level: cell.workout })));
   const mealWeeks = buildWeeks(cells.map((cell) => ({ date: cell.date, level: cell.meal })));
+  const activityWeeks = buildWeeks(cells.map((cell) => ({ date: cell.date, level: cell.activity })));
 
   const streak = currentStreak(today, (date) => summarizeDay(state, date).score >= 50);
   const selectedDay = summarizeDay(state, selected);
+  const selectedWeek = Array.from({ length: 7 }, (_, index) => summarizeDay(state, addDays(selected, index - 6)));
   const hasHistory = state.runs.length + state.workouts.length + state.foods.length + state.weightLogs.length > 0;
   const activeMode = GOAL_MODES.find((m) => m.id === state.profile.goalMode) ?? GOAL_MODES[0];
-
-  const pillars = [
-    { key: "movement", label: "Movement", emoji: "🏃", value: selectedDay.parts.movement, max: selectedDay.partsMax.movement, enabled: state.profile.priorities.running },
-    { key: "training", label: "Training", emoji: "💪", value: selectedDay.parts.training, max: selectedDay.partsMax.training, enabled: state.profile.priorities.strength },
-    { key: "nutrition", label: "Nutrition", emoji: "🍱", value: selectedDay.parts.nutrition, max: selectedDay.partsMax.nutrition, enabled: state.profile.priorities.nutrition },
-    { key: "activity", label: "Daily activity", emoji: "👟", value: selectedDay.parts.activity, max: selectedDay.partsMax.activity, enabled: state.profile.priorities.steps },
-  ].filter((p) => p.enabled && p.max > 0);
 
   return (
     <div className="space-y-4">
@@ -91,36 +89,21 @@ export function ConsistencyPage() {
       ) : null}
 
       <Card className="border-life/30 bg-gradient-to-br from-life/10 to-card">
-        <p className="text-xs uppercase tracking-[0.18em] text-fog">Today&apos;s score</p>
-        <div className="mt-1 flex items-end justify-between">
-          <p className="font-mono text-5xl font-semibold text-life">{selectedDay.score}</p>
-          <div className="text-right">
+        <div className="mb-3 flex items-end justify-between">
+          <div>
+            <p className="text-xs uppercase tracking-[0.18em] text-fog">Consistency board</p>
             <p className="text-sm font-medium">{scoreGrade(selectedDay.score)}</p>
-            <p className="text-xs text-fog">
-              {streak} day streak · {streakLabel(streak)}
-            </p>
           </div>
+          <p className="text-xs text-fog">
+            {streak} day streak · {streakLabel(streak)}
+          </p>
         </div>
-        <ul className="mt-4 space-y-2">
-          {pillars.map((pillar) => (
-            <li key={pillar.key}>
-              <div className="mb-1 flex justify-between text-sm">
-                <span>
-                  {pillar.emoji} {pillar.label}
-                </span>
-                <span className="font-mono text-fog">
-                  {pillar.value}/{pillar.max}
-                </span>
-              </div>
-              <div className="h-2 overflow-hidden rounded-full bg-ink">
-                <div
-                  className="h-full rounded-full bg-life"
-                  style={{ width: `${pillar.max ? (pillar.value / pillar.max) * 100 : 0}%` }}
-                />
-              </div>
-            </li>
-          ))}
-        </ul>
+        <ConsistencyBoard
+          days={selectedWeek}
+          selected={selectedDay}
+          stepGoal={state.profile.stepGoal}
+          priorities={state.profile.priorities}
+        />
       </Card>
 
       <Card>
@@ -196,6 +179,11 @@ export function ConsistencyPage() {
         <h3 className="mb-3 font-semibold">Meal logging</h3>
           <Heatmap weeks={mealWeeks} selected={selected} onSelect={setSelected} palette="eat" />
           <HeatLegend label="Logged — not guilt" palette="eat" />
+      </Card>
+      <Card>
+        <h3 className="mb-3 font-semibold">Activity</h3>
+          <Heatmap weeks={activityWeeks} selected={selected} onSelect={setSelected} palette="step" />
+          <HeatLegend label="Steps from GPS and Stats" palette="step" />
       </Card>
     </div>
   );

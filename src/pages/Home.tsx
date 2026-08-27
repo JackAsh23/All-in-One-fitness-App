@@ -1,11 +1,13 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { Flame, PersonStanding, Salad, Dumbbell, Footprints, BarChart3 } from "lucide-react";
+import { ConsistencyBoard } from "../components/ConsistencyBoard";
 import { Card } from "../components/Heatmap";
 import { MacroBar, ProgressRing } from "../components/Progress";
 import { SyncBanner } from "../components/SyncBanner";
-import { formatDuration, formatLongDate, formatPace, formatTimeLabel, todayISO, weekdayIndex } from "../lib/dates";
+import { addDays, formatDuration, formatLongDate, formatPace, formatTimeLabel, todayISO, weekdayIndex } from "../lib/dates";
 import { currentStreak, summarizeDay } from "../lib/scoring";
+import { stepsSourceLabel } from "../lib/steps";
 import { useAppState } from "../lib/store";
 import { resolvePlan } from "../lib/trainingPlans";
 
@@ -14,6 +16,7 @@ export function HomePage() {
   const today = todayISO();
   const day = summarizeDay(state, today);
   const streak = currentStreak(today, (date) => summarizeDay(state, date).score >= 50);
+  const weekDays = Array.from({ length: 7 }, (_, index) => summarizeDay(state, addDays(today, index - 6)));
   const plan = resolvePlan(state.trainingPlanId, state.customPlans);
   const todayLift = plan?.days.find((day) => day.weekday === weekdayIndex(today)) ?? null;
 
@@ -102,28 +105,21 @@ export function HomePage() {
       <Card className="bg-gradient-to-br from-card to-ink-2">
         <div className="mb-4 flex items-start justify-between">
           <div>
-            <p className="text-xs uppercase tracking-[0.18em] text-fog">Consistency score</p>
-            <p className="font-mono text-5xl font-semibold text-life">{day.score}</p>
+            <p className="text-xs uppercase tracking-[0.18em] text-fog">Consistency board</p>
+            <p className="text-sm text-fog">Movement · Training · Nutrition · Activity</p>
           </div>
           <div className="rounded-full bg-life/15 px-3 py-1 text-sm text-life">
             <Flame className="mr-1 inline" size={14} />
             {streak} day streak
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-2 text-sm">
-          {day.partsMax.movement > 0 ? (
-            <ScoreChip label="Movement" value={day.parts.movement} max={day.partsMax.movement} color="text-run" />
-          ) : null}
-          {day.partsMax.training > 0 ? (
-            <ScoreChip label="Training" value={day.parts.training} max={day.partsMax.training} color="text-lift" />
-          ) : null}
-          {day.partsMax.nutrition > 0 ? (
-            <ScoreChip label="Nutrition" value={day.parts.nutrition} max={day.partsMax.nutrition} color="text-eat" />
-          ) : null}
-          {day.partsMax.activity > 0 ? (
-            <ScoreChip label="Activity" value={day.parts.activity} max={day.partsMax.activity} color="text-step" />
-          ) : null}
-        </div>
+        <ConsistencyBoard
+          days={weekDays}
+          selected={day}
+          stepGoal={state.profile.stepGoal}
+          priorities={state.profile.priorities}
+          compact
+        />
         <Link to="/consistency" className="mt-3 inline-block text-xs text-life">
           Consistency OS · {streak} day streak →
         </Link>
@@ -150,8 +146,8 @@ export function HomePage() {
           to="/analytics?tab=steps"
           icon={<Footprints size={18} />}
           label="Steps"
-          value={`${day.steps.toLocaleString()} / ${state.profile.stepGoal.toLocaleString()}`}
-          sub="Today’s total"
+          value={day.steps > 0 ? `${day.steps.toLocaleString()} / ${state.profile.stepGoal.toLocaleString()}` : `0 / ${state.profile.stepGoal.toLocaleString()}`}
+          sub={stepsSourceLabel(state, today)}
           color="text-step"
         />
       </div>
@@ -178,11 +174,15 @@ export function HomePage() {
                 <span>{item.label}</span>
               </li>
             ))}
-            <li className="flex items-center gap-3">
-              <span className="w-16 font-mono text-xs text-fog">Now</span>
-              <span className="size-2 rounded-full bg-step" />
-              <span>{day.steps.toLocaleString()} steps</span>
-            </li>
+            {day.steps > 0 ? (
+              <li className="flex items-center gap-3">
+                <span className="w-16 font-mono text-xs text-fog">Now</span>
+                <span className="size-2 rounded-full bg-step" />
+                <span>
+                  {day.steps.toLocaleString()} steps · {stepsSourceLabel(state, today)}
+                </span>
+              </li>
+            ) : null}
           </ul>
         )}
       </Card>
@@ -204,27 +204,6 @@ export function HomePage() {
           Morning run {formatDuration(day.runDurationSec)} · {formatPace(day.runDurationSec, day.runKm)}
         </p>
       ) : null}
-    </div>
-  );
-}
-
-function ScoreChip({
-  label,
-  value,
-  max,
-  color,
-}: {
-  label: string;
-  value: number;
-  max: number;
-  color: string;
-}) {
-  return (
-    <div className="rounded-2xl bg-ink/60 px-3 py-2">
-      <p className="text-[11px] uppercase tracking-wide text-fog">{label}</p>
-      <p className={`font-mono text-lg ${color}`}>
-        {value}/{max}
-      </p>
     </div>
   );
 }

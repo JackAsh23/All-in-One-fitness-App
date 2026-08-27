@@ -16,21 +16,6 @@ function isConnected(state: AppState, id: IntegrationId) {
   return state.integrations.find((item) => item.id === id)?.connected ?? false;
 }
 
-function simulatedSteps(state: AppState, date: string, sources: IntegrationId[]): number {
-  const existing = state.steps.find((entry) => entry.date === date)?.steps ?? 0;
-  const dayOffset = Math.max(0, Math.floor((Date.now() - new Date(`${date}T12:00:00`).getTime()) / 86400000));
-  const hour = new Date().getHours();
-  const progress = date === todayISO() ? Math.min(1, (hour - 6) / 14) : 1;
-
-  let base = 5200 + dayOffset * 137;
-  if (sources.includes("apple-health")) base += 1800;
-  if (sources.includes("health-connect")) base += 1500;
-  if (sources.includes("garmin")) base += 2200;
-
-  const wearable = Math.round(base * (0.55 + progress * 0.45));
-  return Math.max(existing, wearable);
-}
-
 function stravaCandidates(state: AppState): RunLog[] {
   if (state.strava) return [];
   if (!isConnected(state, "strava")) return [];
@@ -90,27 +75,6 @@ export function runSync(state: AppState): SyncResult {
   const stepSources = (["apple-health", "health-connect", "garmin"] as IntegrationId[]).filter((id) =>
     isConnected(next, id),
   );
-
-  if (stepSources.length > 0) {
-    for (const date of [todayISO(), addDays(todayISO(), -1), addDays(todayISO(), -2)]) {
-      const before = next.steps.find((entry) => entry.date === date)?.steps ?? 0;
-      const after = simulatedSteps(next, date, stepSources);
-      if (after > before) {
-        next = {
-          ...next,
-          steps: next.steps.some((entry) => entry.date === date)
-            ? next.steps.map((entry) => (entry.date === date ? { ...entry, steps: after } : entry))
-            : [{ date, steps: after }, ...next.steps],
-        };
-        updatedStepDays += 1;
-      }
-    }
-    if (updatedStepDays > 0) {
-      events.push(
-        event(stepSources[0], "steps", `Updated steps on ${updatedStepDays} day${updatedStepDays === 1 ? "" : "s"}.`),
-      );
-    }
-  }
 
   const incomingRuns = [...stravaCandidates(next), ...garminCandidates(next)];
   if (incomingRuns.length > 0) {

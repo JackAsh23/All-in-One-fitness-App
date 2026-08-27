@@ -24,6 +24,7 @@ import {
 } from "../lib/analytics";
 import { bmiCategory, bodyMassIndex } from "../lib/bmi";
 import { todayISO } from "../lib/dates";
+import { dailyStepSeries, stepsForDay, stepsSourceLabel } from "../lib/steps";
 import { finitePositive, parseDecimal, parseHeightCm } from "../lib/numbers";
 import { logWeight, setSteps, updateProfile, useAppState } from "../lib/store";
 import { showToast } from "../lib/toast";
@@ -75,8 +76,8 @@ export function AnalyticsPage() {
   const load = trainingLoad(runLogs);
   const walkLoad = trainingLoad(walkLogs);
   const predictions = racePrediction(runLogs);
-  const stepWeeks = weeklySteps(state.steps);
-  const todaySteps = state.steps.find((entry) => entry.date === todayISO())?.steps ?? 0;
+  const stepWeeks = weeklySteps(dailyStepSeries(state, 56));
+  const todaySteps = stepsForDay(state, todayISO());
   const volume = weeklyWorkoutVolume(state.workouts);
   const liftPrs = exercisePersonalRecords(state.workouts);
   const muscles = muscleGroupFrequency(state.workouts);
@@ -260,6 +261,7 @@ export function AnalyticsPage() {
             <p className="text-xs uppercase tracking-[0.18em] text-step">Today</p>
             <p className="font-mono text-5xl font-semibold">{todaySteps.toLocaleString()}</p>
             <p className="text-sm text-fog">/ {state.profile.stepGoal.toLocaleString()} step goal</p>
+            <p className="mt-1 text-xs text-step">{stepsSourceLabel(state, todayISO())}</p>
             <div className="mt-4 h-2 overflow-hidden rounded-full bg-ink">
               <div
                 className="h-full rounded-full bg-step"
@@ -271,7 +273,7 @@ export function AnalyticsPage() {
             <h3 className="mb-3 font-semibold">Log steps</h3>
             <MonthCalendar
               selected={stepDate}
-              marked={state.steps.filter((entry) => entry.steps > 0).map((entry) => entry.date)}
+              marked={dailyStepSeries(state, 120).filter((entry) => entry.steps > 0).map((entry) => entry.date)}
               onSelect={(iso) => {
                 setStepDate(iso);
                 const logged = state.steps.find((entry) => entry.date === iso)?.steps;
@@ -303,9 +305,9 @@ export function AnalyticsPage() {
               </button>
             </div>
             <p className="mt-2 text-xs text-fog">
-              {state.steps.find((entry) => entry.date === stepDate)?.steps
-                ? `${state.steps.find((entry) => entry.date === stepDate)?.steps?.toLocaleString()} steps on this day`
-                : "No steps on this day yet"}
+              {state.steps.find((entry) => entry.date === stepDate)?.source === "manual"
+                ? `${state.steps.find((entry) => entry.date === stepDate)?.steps?.toLocaleString()} steps logged on this day`
+                : `${stepsForDay(state, stepDate).toLocaleString()} from GPS · extra steps can be typed above`}
             </p>
           </Card>
           <Card>

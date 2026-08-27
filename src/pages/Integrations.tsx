@@ -85,12 +85,12 @@ export function IntegrationsPage() {
 
       <Card>
         <p className="text-sm text-fog">
-          Prototype mode: connect sources to simulate steps and imported runs. GPS logging on the Run tab is real.
+          The web app cannot read Apple Health or Garmin steps. Home counts real GPS walks and runs, plus steps you log on Stats. Connect is a placeholder until a native build exists.
         </p>
         <div className="mt-4 flex items-center justify-between rounded-2xl bg-ink px-3 py-3">
           <div>
             <p className="font-medium">Background auto-sync</p>
-            <p className="text-xs text-fog">Pulls steps & runs every ~90s when connected</p>
+            <p className="text-xs text-fog">Only real GPS and Stats logs — no fake step counts</p>
           </div>
           <input
             type="checkbox"

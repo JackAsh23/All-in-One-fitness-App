@@ -1,13 +1,14 @@
 import type { ReactNode } from "react";
 import { toISODate } from "../lib/dates";
 
-export type HeatPalette = "life" | "run" | "lift" | "eat";
+export type HeatPalette = "life" | "run" | "lift" | "eat" | "step";
 
 const PALETTES: Record<HeatPalette, readonly string[]> = {
   life: ["bg-heat-0", "bg-heat-1", "bg-heat-2", "bg-heat-3", "bg-heat-4"],
   run: ["bg-run-heat-0", "bg-run-heat-1", "bg-run-heat-2", "bg-run-heat-3", "bg-run-heat-4"],
   lift: ["bg-lift-heat-0", "bg-lift-heat-1", "bg-lift-heat-2", "bg-lift-heat-3", "bg-lift-heat-4"],
   eat: ["bg-eat-heat-0", "bg-eat-heat-1", "bg-eat-heat-2", "bg-eat-heat-3", "bg-eat-heat-4"],
+  step: ["bg-step-heat-0", "bg-step-heat-1", "bg-step-heat-2", "bg-step-heat-3", "bg-step-heat-4"],
 };
 
 type HeatmapProps = {

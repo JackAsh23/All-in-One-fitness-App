@@ -136,6 +136,8 @@ export type RecentFood = {
 export type StepLog = {
   date: string;
   steps: number;
+  /** manual = typed on Stats. Untagged live logs from the old fake Health sync are ignored. */
+  source?: "manual";
 };
 
 export type WeightLog = {

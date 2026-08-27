@@ -5,6 +5,12 @@ export function githubPagesBasePath(): string | undefined {
   return base.endsWith("/") ? base : `${base}/`;
 }
 
+export function publicAsset(file: string): string {
+  const base = import.meta.env.BASE_URL || "/";
+  const prefix = base.endsWith("/") ? base : `${base}/`;
+  return `${prefix}${file.replace(/^\//, "")}`;
+}
+
 /** React Router basename (no trailing slash). */
 export function routerBasename(): string | undefined {
   const base = githubPagesBasePath();

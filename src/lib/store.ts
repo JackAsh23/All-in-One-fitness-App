@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from "react";
 import { createBlankState, createDemoState } from "./demo";
-import { defaultIntegrations } from "./integrations";
+import { disconnectedIntegrations } from "./integrations";
 import { preferPersistedState, looksLikeSeededDemo } from "./persistChoice";
 import { defaultPriorities } from "./scoring";
 import { getFoodById, applyFoodLogPatch } from "./nutrition";
@@ -58,8 +58,8 @@ function migrate(raw: Record<string, unknown>): AppState | null {
       restSec: typeof profile.restSec === "number" && profile.restSec > 0 ? profile.restSec : 90,
       heightCm: typeof profile.heightCm === "number" && profile.heightCm > 0 ? profile.heightCm : undefined,
     },
-    integrations: Array.isArray(base.integrations) ? base.integrations : defaultIntegrations(),
-    autoSync: typeof base.autoSync === "boolean" ? base.autoSync : true,
+    integrations: Array.isArray(base.integrations) ? base.integrations : disconnectedIntegrations(),
+    autoSync: typeof base.autoSync === "boolean" ? base.autoSync : false,
     syncLog: Array.isArray(base.syncLog) ? base.syncLog : [],
     favoriteFoodIds: Array.isArray(base.favoriteFoodIds) ? base.favoriteFoodIds : [],
     recentFoods: Array.isArray(base.recentFoods) ? base.recentFoods : [],
@@ -420,9 +420,10 @@ export function saveMealFromToday(mealType: MealType, name: string, emoji: strin
 
 export function setSteps(date: string, steps: number) {
   const existing = state.steps.find((entry) => entry.date === date);
+  const nextEntry = { date, steps, source: "manual" as const };
   const nextSteps = existing
-    ? state.steps.map((entry) => (entry.date === date ? { ...entry, steps } : entry))
-    : [{ date, steps }, ...state.steps];
+    ? state.steps.map((entry) => (entry.date === date ? { ...entry, ...nextEntry } : entry))
+    : [nextEntry, ...state.steps];
   emit({ ...state, steps: nextSteps });
 }
 

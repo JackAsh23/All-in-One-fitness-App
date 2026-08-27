@@ -15,7 +15,7 @@ export const INTEGRATION_CATALOG: IntegrationMeta[] = [
     name: "Apple Health",
     platform: "iOS",
     emoji: "🍎",
-    blurb: "Steps, walking distance, and workouts from iPhone & Apple Watch.",
+    blurb: "Not available in the web app yet. Steps come from GPS walks/runs and Stats.",
     syncs: ["steps", "runs", "workouts"],
   },
   {
@@ -23,7 +23,7 @@ export const INTEGRATION_CATALOG: IntegrationMeta[] = [
     name: "Health Connect",
     platform: "Android",
     emoji: "🤖",
-    blurb: "Steps and activity from Android phones and wearables.",
+    blurb: "Not available in the web app yet. Steps come from GPS walks/runs and Stats.",
     syncs: ["steps", "runs"],
   },
   {
@@ -39,7 +39,7 @@ export const INTEGRATION_CATALOG: IntegrationMeta[] = [
     name: "Garmin Connect",
     platform: "Cross-platform",
     emoji: "⌚",
-    blurb: "Runs and daily steps from Garmin watches.",
+    blurb: "Not available in the web app yet. Steps come from GPS walks/runs and Stats.",
     syncs: ["steps", "runs"],
   },
 ];

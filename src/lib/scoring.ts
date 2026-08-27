@@ -1,4 +1,5 @@
 import type { AppState, DaySummary, Profile, Priorities } from "./types";
+import { stepsForDay } from "./steps";
 
 const WEIGHTS = {
   running: 30,
@@ -26,7 +27,7 @@ export function summarizeDay(state: AppState, date: string): DaySummary {
   const runs = state.runs.filter((run) => run.date === date);
   const workouts = state.workouts.filter((workout) => workout.date === date);
   const foods = state.foods.filter((food) => food.date === date);
-  const steps = state.steps.find((entry) => entry.date === date)?.steps ?? 0;
+  const steps = stepsForDay(state, date);
 
   const runKm = runs.reduce((sum, run) => sum + run.distanceKm, 0);
   const runDurationSec = runs.reduce((sum, run) => sum + run.durationSec, 0);
@@ -153,6 +154,8 @@ export function workoutHeatLevel(count: number): 0 | 1 | 2 | 3 | 4 {
   if (count <= 0) return 0;
   return 4;
 }
+
+export { stepHeatLevel } from "./steps";
 
 export function currentStreak(today: string, isActive: (date: string) => boolean): number {
   let streak = 0;

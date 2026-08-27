@@ -61,7 +61,7 @@ if (!isCapacitor) {
     VitePWA({
       registerType: "autoUpdate",
       injectRegister: null,
-      includeAssets: ["favicon.svg", "apple-touch-icon.png", "pwa-192.png", "pwa-512.png"],
+      includeAssets: ["favicon.svg", "apple-touch-icon.png", "pwa-192.png", "pwa-512.png", "logo.png"],
       manifest: {
         name: "One Life — Fitness OS",
         short_name: "One Life",
@@ -81,7 +81,7 @@ if (!isCapacitor) {
         ],
       },
       workbox: {
-        cacheId: "one-life-1.6.4",
+        cacheId: "one-life-1.6.5",
         skipWaiting: true,
         clientsClaim: true,
         navigateFallback: isGithubPages ? `${GITHUB_PAGES_BASE}index.html` : "/index.html",

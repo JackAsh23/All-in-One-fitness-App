@@ -2,6 +2,7 @@ import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { BarChart3, Dumbbell, Flame, Home, Plus, Salad, UserRound, PersonStanding } from "lucide-react";
 import { BackButton } from "./BackButton";
 import { ToastHost } from "./ToastHost";
+import { publicAsset } from "../lib/githubPagesPath";
 
 const TABS = [
   { to: "/", label: "Home", icon: Home, end: true },
@@ -30,6 +31,13 @@ export function AppShell() {
         <header className="flex items-center justify-between gap-3 px-5 pb-3 pt-[max(1rem,env(safe-area-inset-top))]">
           <div className="flex min-w-0 items-center gap-3">
             {nested ? <BackButton fallback={nested.parent} iconOnly /> : null}
+            <img
+              src={publicAsset("logo.png")}
+              alt=""
+              width={36}
+              height={36}
+              className="size-9 shrink-0 rounded-xl object-contain"
+            />
             <div className="min-w-0">
               <p className="text-[11px] uppercase tracking-[0.22em] text-life">One Life</p>
               <h1 className="text-lg font-semibold leading-tight">{nested?.title ?? "Fitness OS"}</h1>
