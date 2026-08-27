@@ -74,7 +74,7 @@ export function AppShell() {
                 end={tab.end}
                 className={({ isActive }) =>
                   `tap-scale flex flex-col items-center gap-1 rounded-2xl py-1.5 text-[10px] transition-colors ${
-                    isActive ? "bg-life/10 text-life" : "text-snow/70"
+                    isActive ? "bg-life/10 text-life" : "text-snow"
                   }`
                 }
               >

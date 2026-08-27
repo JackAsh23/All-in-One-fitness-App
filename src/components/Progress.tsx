@@ -54,7 +54,7 @@ export function MacroBar({
     <div>
       <div className="mb-1 flex items-center justify-between text-sm">
         <span>{label}</span>
-        <span className="font-mono text-fog">
+        <span className="font-mono text-snow">
           {Math.round(value)} / {goal}
         </span>
       </div>

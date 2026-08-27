@@ -478,12 +478,13 @@ export function RunPage() {
         </Link>
       </div>
 
-      <div className="grid grid-cols-2 gap-2 rounded-2xl bg-card p-1">
+      <div className="grid grid-cols-2 gap-1 rounded-2xl bg-card p-1">
         <button
           type="button"
           onClick={() => setKind("run")}
-          className={`flex items-center justify-center gap-1 rounded-xl py-2 text-sm font-medium ${
-            kind === "run" ? "bg-run text-ink" : "text-fog"
+          aria-pressed={kind === "run"}
+          className={`flex min-h-12 items-center justify-center gap-1.5 rounded-xl text-sm font-semibold ${
+            kind === "run" ? "bg-run text-ink" : "bg-transparent text-snow"
           }`}
         >
           <PersonStanding size={16} />
@@ -492,8 +493,9 @@ export function RunPage() {
         <button
           type="button"
           onClick={() => setKind("walk")}
-          className={`flex items-center justify-center gap-1 rounded-xl py-2 text-sm font-medium ${
-            kind === "walk" ? "bg-step text-ink" : "text-fog"
+          aria-pressed={kind === "walk"}
+          className={`flex min-h-12 items-center justify-center gap-1.5 rounded-xl text-sm font-semibold ${
+            kind === "walk" ? "bg-step text-ink" : "bg-transparent text-snow"
           }`}
         >
           <Footprints size={16} />
@@ -508,13 +510,13 @@ export function RunPage() {
           onClick={() => unlockGps("live", kind, selectedRoute)}
         >
           Start {kind}
-          <p className="mt-1 text-sm font-normal opacity-80">
+          <p className="mt-1 text-sm font-normal text-ink/80">
             {selectedRoute ? `Follow ${selectedRoute.name}` : "GPS tracking + live map"}
           </p>
         </button>
         <button
           type="button"
-          className="rounded-3xl border border-line bg-card px-4 py-5 text-left"
+          className="rounded-3xl border border-line bg-card px-4 py-5 text-left font-semibold"
           onClick={() => setLogOpen(true)}
         >
           Quick log
@@ -561,7 +563,7 @@ export function RunPage() {
               </button>
               <button
                 type="button"
-                className="text-xs text-run"
+                className="rounded-full bg-run px-3 py-1.5 text-xs font-semibold text-ink"
                 onClick={() => unlockGps("live", route.kind, route)}
               >
                 Follow

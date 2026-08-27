@@ -60,7 +60,7 @@ export function MonthCalendar({ selected, marked, onSelect, accent = "bg-life te
               type="button"
               onClick={() => onSelect(iso)}
               className={`relative grid h-9 place-items-center rounded-xl text-sm ${
-                isSelected ? accent : has ? "bg-ink text-snow" : "text-fog"
+                isSelected ? accent : has ? "bg-card text-snow" : "text-snow"
               }`}
             >
               {day}
