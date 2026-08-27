@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Barcode, Camera, Plus, ScanLine, Search, Star, Weight } from "lucide-react";
+import { Barcode, Plus, ScanLine, Search, Star, Utensils, Weight } from "lucide-react";
 import { BarcodeSheet } from "../components/BarcodeSheet";
 import { Card } from "../components/Heatmap";
 import { MacroBar } from "../components/Progress";
@@ -197,7 +197,12 @@ export function NutritionPage() {
           label="Barcode Scan"
           onClick={() => setBarcodeOpen(true)}
         />
-        <LogMode icon={<Camera size={18} />} label="Meal Scan" onClick={() => setScanOpen(true)} />
+        <LogMode
+          icon={<Utensils size={18} />}
+          label="Sample plate"
+          hint="Not a camera scan"
+          onClick={() => setScanOpen(true)}
+        />
         <LogMode icon={<Plus size={18} />} label="Quick ADD" onClick={() => setChooser("quick")} />
       </div>
 
@@ -449,8 +454,9 @@ export function NutritionPage() {
             }}
           />
           <LogMode
-            icon={<Camera size={18} />}
-            label="Meal Scan"
+            icon={<Utensils size={18} />}
+            label="Sample plate"
+            hint="Not a camera scan"
             onClick={() => {
               setChooser("closed");
               setScanOpen(true);
@@ -640,17 +646,28 @@ export function NutritionPage() {
 
       <p className="flex items-center justify-center gap-1 text-center text-xs text-fog">
         <Barcode size={12} />
-        Tap + to search, scan, meal-scan, or quick-add
+        Tap + to search, scan a barcode, log a sample plate, or quick-add
       </p>
     </div>
   );
 }
 
-function LogMode({ icon, label, onClick }: { icon: ReactNode; label: string; onClick: () => void }) {
+function LogMode({
+  icon,
+  label,
+  hint,
+  onClick,
+}: {
+  icon: ReactNode;
+  label: string;
+  hint?: string;
+  onClick: () => void;
+}) {
   return (
     <button type="button" onClick={onClick} className="rounded-3xl bg-card px-3 py-5 text-center">
       <div className="mb-2 flex justify-center text-eat">{icon}</div>
       <p className="text-sm font-medium">{label}</p>
+      {hint ? <p className="mt-1 text-[11px] text-fog">{hint}</p> : null}
     </button>
   );
 }

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { Footprints, MapPinned, Navigation, PersonStanding } from "lucide-react";
+import { Footprints, MapPinned, Navigation, Pause, PersonStanding, Play } from "lucide-react";
 import { ActivityMap } from "../components/ActivityMap";
 import { BackButton } from "../components/BackButton";
 import { Card } from "../components/Heatmap";
@@ -36,6 +36,7 @@ export function RunPage() {
   const [routeHint, setRouteHint] = useState<string | null>(null);
   const [logOpen, setLogOpen] = useState(false);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const [paused, setPaused] = useState(false);
   const [distance, setDistance] = useState("5.0");
   const [minutes, setMinutes] = useState("32");
   const [seconds, setSeconds] = useState("00");
@@ -48,6 +49,7 @@ export function RunPage() {
   const elapsedRef = useRef(0);
   const pathRef = useRef<GeoPoint[]>([]);
   const finishingRef = useRef(false);
+  const pausedRef = useRef(false);
   draftRef.current = draft;
   elapsedRef.current = elapsed;
   pathRef.current = path;
@@ -56,10 +58,10 @@ export function RunPage() {
   const allRoutes = [...state.savedRoutes, ...presets.filter((p) => !state.savedRoutes.some((s) => s.id === p.id))];
 
   useEffect(() => {
-    if (phase !== "live") return;
+    if (phase !== "live" || paused) return;
     const id = window.setInterval(() => setElapsed((value) => value + 1), 1000);
     return () => window.clearInterval(id);
-  }, [phase]);
+  }, [phase, paused]);
 
   useEffect(() => {
     return () => {
@@ -100,6 +102,8 @@ export function RunPage() {
       setGpsBusy(false);
       if (next === "live") {
         finishingRef.current = false;
+        pausedRef.current = false;
+        setPaused(false);
         startWatch(point);
       }
       setPhase(next);
@@ -120,12 +124,27 @@ export function RunPage() {
     let last = origin;
     watchOff.current = watchGps((point, accuracyM) => {
       setCenter(point);
+      if (pausedRef.current) {
+        last = point;
+        return;
+      }
       const action = gpsPathUpdate(last, point, accuracyM);
       if (action === "ignore") return;
       last = point;
       if (action === "rebase") return;
       setPath((current) => [...current, point]);
     }, (message) => setGpsError(message));
+  }
+
+  function pauseLive() {
+    pausedRef.current = true;
+    setPaused(true);
+  }
+
+  function resumeLive() {
+    pausedRef.current = false;
+    setPaused(false);
+    setConfirmDiscard(false);
   }
 
   function finishLive() {
@@ -157,13 +176,15 @@ export function RunPage() {
     setPath([]);
     setGpsError(null);
     setConfirmDiscard(false);
+    pausedRef.current = false;
+    setPaused(false);
   }
 
   useEffect(() => {
-    if (phase !== "live" || !selectedRoute) return;
+    if (phase !== "live" || paused || !selectedRoute) return;
     if (liveKm < 0.15 || remainingKm > 0.05) return;
     finishLive();
-  }, [phase, liveKm, remainingKm, selectedRoute]);
+  }, [phase, paused, liveKm, remainingKm, selectedRoute]);
 
   function saveManual() {
     const km = Number(distance);
@@ -273,6 +294,8 @@ export function RunPage() {
     saveRoute(named);
     setSelectedRoute(named);
     finishingRef.current = false;
+    pausedRef.current = false;
+    setPaused(false);
     setPath([center]);
     startWatch(center);
     setElapsed(0);
@@ -306,8 +329,8 @@ export function RunPage() {
             />
           </div>
           <div className="z-10 shrink-0 rounded-t-3xl border-t border-line bg-ink px-4 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
-            <p className="text-xs uppercase tracking-[0.2em] text-run">
-              Live {kind}
+            <p className={`text-xs uppercase tracking-[0.2em] ${paused ? "text-eat" : "text-run"}`}>
+              {paused ? "Paused" : "Live"} {kind}
               {selectedRoute ? ` · ${selectedRoute.name}` : ""}
             </p>
             <p className="mt-1 font-mono text-5xl">{formatDuration(elapsed)}</p>
@@ -316,20 +339,34 @@ export function RunPage() {
               <Stat value={formatPace(elapsed, liveKm).replace("/km", "")} label="/km" />
               <Stat value={`${liveCals}`} label="kcal" />
             </div>
-            {selectedRoute ? (
+            {paused ? (
+              <p className="mt-2 text-center text-sm text-fog">
+                Timer and distance are frozen. Resume when you start moving again.
+              </p>
+            ) : selectedRoute ? (
               <p className="mt-2 text-center text-sm text-fog">
                 <Navigation size={12} className="mr-1 inline" />
                 {remainingKm.toFixed(2)} km left · finishes and saves at 0
               </p>
             ) : null}
             {gpsError ? <p className="mt-2 text-center text-sm text-run">{gpsError}</p> : null}
-            <button
-              type="button"
-              className={`mt-4 w-full rounded-2xl py-4 text-lg font-semibold ${accent}`}
-              onClick={finishLive}
-            >
-              {finishLabel}
-            </button>
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                className="flex items-center justify-center gap-2 rounded-2xl bg-card py-4 text-lg font-semibold text-snow"
+                onClick={paused ? resumeLive : pauseLive}
+              >
+                {paused ? <Play size={20} /> : <Pause size={20} />}
+                {paused ? "Resume" : "Pause"}
+              </button>
+              <button
+                type="button"
+                className={`rounded-2xl py-4 text-lg font-semibold ${accent}`}
+                onClick={finishLive}
+              >
+                {finishLabel}
+              </button>
+            </div>
             <button
               type="button"
               className="mt-2 w-full py-2 text-sm font-medium text-snow/80"
