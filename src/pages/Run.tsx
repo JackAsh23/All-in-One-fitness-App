@@ -382,7 +382,8 @@ export function RunPage() {
             <p className="text-xs uppercase tracking-[0.2em] text-step">Tap the map to drop pins</p>
             <h2 className="mt-1 text-2xl font-semibold">{draft?.distanceKm.toFixed(2) ?? "0.00"} km planned</h2>
             <p className="text-sm text-fog">
-              {draft?.waypoints?.length ?? 0} pins · {kind}
+              {draft?.waypoints?.length ?? 0}{" "}
+              {(draft?.waypoints?.length ?? 0) === 1 ? "pin" : "pins"} · {kind}
               {routingBusy ? " · routing…" : ""}
             </p>
             <p className="mt-1 text-xs text-fog">
