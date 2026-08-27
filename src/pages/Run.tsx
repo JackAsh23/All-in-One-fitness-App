@@ -379,7 +379,7 @@ export function RunPage() {
             </div>
           </div>
           <div className="-mt-6 flex-1 rounded-t-3xl bg-ink px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-5">
-            <p className="text-sm font-semibold uppercase tracking-[0.14em] text-life">
+            <p className="text-sm font-semibold uppercase tracking-[0.12em] text-snow">
               Tap the map to drop pins
             </p>
             <h2 className="mt-1 text-2xl font-semibold">{draft?.distanceKm.toFixed(2) ?? "0.00"} km planned</h2>
@@ -388,7 +388,7 @@ export function RunPage() {
               {(draft?.waypoints?.length ?? 0) === 1 ? "pin" : "pins"} · {kind}
               {routingBusy ? " · routing…" : ""}
             </p>
-            <p className="mt-1 text-sm text-snow/80">
+            <p className="mt-1 text-sm text-snow">
               {routeHint ?? "Drag a pin to tweak the path · tap a pin to delete it."}
             </p>
             {(draft?.waypoints?.length ?? 0) > 0 ? (
