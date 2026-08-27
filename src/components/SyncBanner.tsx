@@ -39,7 +39,7 @@ export function SyncBanner() {
           <RefreshCw size={16} />
         </button>
       </div>
-      <Link to="/integrations" className="mt-2 inline-block text-xs text-fog hover:text-snow">
+      <Link to="/integrations" className="mt-2 inline-block text-xs font-medium text-snow">
         Manage connections
       </Link>
     </Card>

@@ -7,8 +7,8 @@
   --color-ink-2: #0e1318;
   --color-card: #141b22;
   --color-card-2: #1b2430;
-  --color-line: #2a3542;
-  --color-fog: #8b98a5;
+  --color-line: #4a5b6c;
+  --color-fog: #c9d3dc;
   --color-snow: #f4f7fa;
   --color-life: #3ee07f;
   --color-life-dim: #1b7a45;
@@ -47,6 +47,8 @@ body,
   background: #05070a;
   color: var(--color-snow);
   font-family: var(--font-sans);
+  color-scheme: dark;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
@@ -62,6 +64,13 @@ input,
 select,
 textarea {
   font-family: inherit;
+  color: inherit;
+}
+
+button {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
 }
 
 button,
@@ -77,7 +86,7 @@ textarea {
 
 input::placeholder,
 textarea::placeholder {
-  color: #9aa8b5;
+  color: #d5dde4;
   opacity: 1;
 }
 

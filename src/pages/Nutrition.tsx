@@ -305,7 +305,7 @@ export function NutritionPage() {
                       </p>
                     </span>
                   </button>
-                  <button type="button" className="text-xs text-fog" onClick={() => removeSavedMeal(saved.id)}>
+                  <button type="button" className="text-xs font-medium text-snow" onClick={() => removeSavedMeal(saved.id)}>
                     ✕
                   </button>
                 </div>
@@ -400,7 +400,7 @@ export function NutritionPage() {
                         </div>
                         <button
                           type="button"
-                          className="shrink-0 text-xs text-fog"
+                          className="shrink-0 text-xs font-medium text-snow"
                           onClick={() => {
                             removeFood(food.id);
                             showToast("Food removed", {

@@ -96,7 +96,7 @@ export function ProfilePage() {
           <button
             type="button"
             onClick={() => void hardRefreshApp()}
-            className="w-full rounded-2xl border border-line py-3 text-sm text-fog"
+            className="w-full rounded-2xl border border-line bg-card py-3 text-sm font-semibold text-snow"
           >
             Get latest app version (v{APP_VERSION})
           </button>
@@ -175,7 +175,7 @@ export function ProfilePage() {
         ))}
         <button
           type="button"
-          className="mt-2 text-sm text-fog"
+          className="mt-2 text-sm font-medium text-snow"
           onClick={() => setPriorities(defaultPriorities())}
         >
           Reset priorities
@@ -202,7 +202,7 @@ export function ProfilePage() {
       <button
         type="button"
         onClick={resetDemo}
-        className="w-full rounded-3xl border border-line py-3 text-fog"
+        className="w-full rounded-3xl border border-line bg-card py-3 font-medium text-snow"
       >
         Reload demo year
       </button>

@@ -27,7 +27,7 @@ export function PortionStepper({ grams, onChange, step = 10 }: Props) {
       <button
         type="button"
         onClick={() => onChange(grams + 25)}
-        className="rounded-xl bg-card px-3 py-2 text-xs text-fog"
+        className="rounded-xl bg-card px-3 py-2 text-xs font-medium text-snow"
       >
         +25
       </button>

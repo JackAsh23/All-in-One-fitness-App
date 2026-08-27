@@ -33,7 +33,7 @@ export function ProgressRing({ value, max, color, size = 104, stroke = 9, label,
         </div>
       </div>
       <div className="text-center text-[11px] uppercase tracking-wide text-fog">{label}</div>
-      {sub ? <div className="text-center text-[11px] text-fog/80">{sub}</div> : null}
+      {sub ? <div className="text-center text-[11px] text-fog">{sub}</div> : null}
     </div>
   );
 }

@@ -332,7 +332,7 @@ export function RunPage() {
             </button>
             <button
               type="button"
-              className="mt-2 w-full py-2 text-sm text-fog"
+              className="mt-2 w-full py-2 text-sm font-medium text-snow/80"
               onClick={() => {
                 if (!confirmDiscard) {
                   setConfirmDiscard(true);
@@ -379,20 +379,22 @@ export function RunPage() {
             </div>
           </div>
           <div className="-mt-6 flex-1 rounded-t-3xl bg-ink px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-5">
-            <p className="text-xs uppercase tracking-[0.2em] text-step">Tap the map to drop pins</p>
+            <p className="text-sm font-semibold uppercase tracking-[0.14em] text-life">
+              Tap the map to drop pins
+            </p>
             <h2 className="mt-1 text-2xl font-semibold">{draft?.distanceKm.toFixed(2) ?? "0.00"} km planned</h2>
-            <p className="text-sm text-fog">
+            <p className="text-sm text-snow/80">
               {draft?.waypoints?.length ?? 0}{" "}
               {(draft?.waypoints?.length ?? 0) === 1 ? "pin" : "pins"} · {kind}
               {routingBusy ? " · routing…" : ""}
             </p>
-            <p className="mt-1 text-xs text-fog">
+            <p className="mt-1 text-sm text-snow/80">
               {routeHint ?? "Drag a pin to tweak the path · tap a pin to delete it."}
             </p>
             {(draft?.waypoints?.length ?? 0) > 0 ? (
               <button
                 type="button"
-                className="mt-2 w-full rounded-2xl border border-line py-2.5 text-sm text-fog"
+                className="mt-2 w-full rounded-2xl border border-line bg-card py-3 text-sm font-semibold text-snow"
                 onClick={removeLastWaypoint}
               >
                 Remove last pin
@@ -407,7 +409,7 @@ export function RunPage() {
             <div className="mt-4 flex gap-2">
               <button
                 type="button"
-                className="flex-1 rounded-2xl bg-card py-3"
+                className="flex-1 rounded-2xl bg-card py-3 font-semibold text-snow"
                 onClick={() => {
                   setDraft(null);
                   setRouteName("");
@@ -418,7 +420,7 @@ export function RunPage() {
               </button>
               <button
                 type="button"
-                className="flex-1 rounded-2xl border border-step/40 bg-step/15 py-3 font-semibold text-step disabled:opacity-40"
+                className="flex-1 rounded-2xl bg-life py-3 font-semibold text-ink disabled:opacity-40"
                 disabled={!draft || draft.points.length < 2 || routingBusy}
                 onClick={persistDraftRoute}
               >
@@ -459,7 +461,7 @@ export function RunPage() {
           >
             {gpsBusy ? "Waiting for GPS…" : "Allow GPS & start"}
           </button>
-          <button type="button" className="mt-3 w-full text-sm text-fog" onClick={() => setPhase("home")}>
+          <button type="button" className="mt-3 w-full text-sm font-medium text-snow" onClick={() => setPhase("home")}>
             Cancel
           </button>
         </Card>
@@ -565,7 +567,7 @@ export function RunPage() {
                 Follow
               </button>
               {!route.preset ? (
-                <button type="button" className="text-xs text-fog" onClick={() => removeRoute(route.id)}>
+                <button type="button" className="text-xs font-medium text-snow" onClick={() => removeRoute(route.id)}>
                   ✕
                 </button>
               ) : null}
@@ -606,7 +608,7 @@ export function RunPage() {
                   </p>
                   <button
                     type="button"
-                    className="mt-1 text-xs text-fog"
+                    className="mt-1 text-xs font-medium text-snow"
                     onClick={() => {
                       removeRun(run.id);
                       showToast(`${run.kind === "walk" ? "Walk" : "Run"} deleted`, {

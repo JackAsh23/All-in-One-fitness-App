@@ -113,7 +113,7 @@ export function MealScanSheet({ open, onClose, onConfirm }: Props) {
           >
             Log this meal
           </button>
-          <button type="button" className="w-full text-sm text-fog" onClick={analyze}>
+          <button type="button" className="w-full text-sm font-medium text-snow" onClick={analyze}>
             Scan again
           </button>
         </div>

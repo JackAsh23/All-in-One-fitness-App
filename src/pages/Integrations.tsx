@@ -135,7 +135,7 @@ export function IntegrationsPage() {
                     type="button"
                     disabled={stravaBusy}
                     onClick={() => disconnectStrava()}
-                    className="rounded-full bg-card px-4 py-2 text-sm font-medium text-fog"
+                    className="rounded-full bg-card px-4 py-2 text-sm font-medium text-snow"
                   >
                     Disconnect
                   </button>
@@ -154,7 +154,7 @@ export function IntegrationsPage() {
                   type="button"
                   onClick={() => setIntegrationConnected(meta.id, !on)}
                   className={`rounded-full px-4 py-2 text-sm font-medium ${
-                    on ? "bg-card text-fog" : "bg-step text-ink"
+                    on ? "bg-card text-snow" : "bg-step text-ink"
                   }`}
                 >
                   {on ? "Disconnect" : isStrava && !stravaLive ? "Demo connect" : "Connect"}
