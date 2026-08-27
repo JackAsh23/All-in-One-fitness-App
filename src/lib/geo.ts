@@ -93,3 +93,16 @@ export function watchGps(
 export function kcalForDistance(km: number, kind: "run" | "walk") {
   return Math.round(km * (kind === "walk" ? 45 : 62));
 }
+
+/** Decide whether a GPS sample should extend the recorded path. */
+export function gpsPathUpdate(
+  last: GeoPoint,
+  next: GeoPoint,
+  accuracyM: number,
+): "ignore" | "append" | "rebase" {
+  if (accuracyM > 80) return "ignore";
+  const meters = haversineKm(last, next) * 1000;
+  if (meters < 3) return "ignore";
+  if (meters > 250) return "rebase";
+  return "append";
+}

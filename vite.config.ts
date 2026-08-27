@@ -81,7 +81,7 @@ if (!isCapacitor) {
         ],
       },
       workbox: {
-        cacheId: "one-life-1.5.1",
+        cacheId: "one-life-1.5.2",
         skipWaiting: true,
         clientsClaim: true,
         navigateFallback: isGithubPages ? `${GITHUB_PAGES_BASE}index.html` : "/index.html",

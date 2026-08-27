@@ -7,7 +7,7 @@ import { Card } from "../components/Heatmap";
 import { Sheet } from "../components/Sheet";
 import { formatSourceLabel } from "../lib/integrations";
 import { addDays, formatDuration, formatPace, formatShortDate, nowTime, todayISO, uid } from "../lib/dates";
-import { defaultCenter, haversineKm, kcalForDistance, pathDistanceKm, requestGps, watchGps } from "../lib/geo";
+import { defaultCenter, gpsPathUpdate, kcalForDistance, pathDistanceKm, requestGps, watchGps } from "../lib/geo";
 import { newDraftRoute, presetRoutes } from "../lib/routes";
 import { summarizeDay } from "../lib/scoring";
 import { addRun, removeRoute, removeRun, saveRoute, useAppState } from "../lib/store";
@@ -42,7 +42,12 @@ export function RunPage() {
   const pendingPhase = useRef<Phase>("live");
   const watchOff = useRef<(() => void) | null>(null);
   const draftRef = useRef<RoutePlan | null>(null);
+  const elapsedRef = useRef(0);
+  const pathRef = useRef<GeoPoint[]>([]);
+  const finishingRef = useRef(false);
   draftRef.current = draft;
+  elapsedRef.current = elapsed;
+  pathRef.current = path;
 
   const presets = useMemo(() => presetRoutes(center), [center]);
   const allRoutes = [...state.savedRoutes, ...presets.filter((p) => !state.savedRoutes.some((s) => s.id === p.id))];
@@ -87,7 +92,10 @@ export function RunPage() {
       setCenter(point);
       setPath([point]);
       setGpsBusy(false);
-      if (next === "live") startWatch(point);
+      if (next === "live") {
+        finishingRef.current = false;
+        startWatch(point);
+      }
       setPhase(next);
     } catch (error) {
       setGpsBusy(false);
@@ -104,31 +112,32 @@ export function RunPage() {
   function startWatch(origin: GeoPoint) {
     watchOff.current?.();
     let last = origin;
-    watchOff.current = watchGps((point) => {
-      const meters = haversineKm(last, point) * 1000;
-      if (meters < 2 || meters > 55) {
-        setCenter(point);
-        return;
-      }
-      last = point;
+    watchOff.current = watchGps((point, accuracyM) => {
       setCenter(point);
+      const action = gpsPathUpdate(last, point, accuracyM);
+      if (action === "ignore") return;
+      last = point;
+      if (action === "rebase") return;
       setPath((current) => [...current, point]);
     }, (message) => setGpsError(message));
   }
 
   function finishLive() {
-    if (elapsed < 15 && liveKm < 0.05) return;
+    if (finishingRef.current) return;
+    finishingRef.current = true;
+    const tracked = pathRef.current;
+    const km = Math.round(pathDistanceKm(tracked) * 100) / 100;
     addRun({
       id: uid(kind),
       date: today,
       time: nowTime(),
-      distanceKm: Math.round(liveKm * 100) / 100,
-      durationSec: elapsed,
-      calories: liveCals,
+      distanceKm: km,
+      durationSec: Math.max(elapsedRef.current, 1),
+      calories: kcalForDistance(km, kind),
       kind,
       notes: selectedRoute ? `Followed ${selectedRoute.name}` : kind === "walk" ? "Outdoor walk" : "Outdoor run",
       routeId: selectedRoute?.id,
-      path,
+      path: tracked,
     });
     stopLive();
     showToast(kind === "walk" ? "Walk saved" : "Run saved");
@@ -143,6 +152,12 @@ export function RunPage() {
     setGpsError(null);
     setConfirmDiscard(false);
   }
+
+  useEffect(() => {
+    if (phase !== "live" || !selectedRoute) return;
+    if (liveKm < 0.15 || remainingKm > 0.05) return;
+    finishLive();
+  }, [phase, liveKm, remainingKm, selectedRoute]);
 
   function saveManual() {
     const km = Number(distance);
@@ -189,6 +204,7 @@ export function RunPage() {
     const named = { ...draft, name: routeName.trim() || draft.name };
     saveRoute(named);
     setSelectedRoute(named);
+    finishingRef.current = false;
     setPath([center]);
     startWatch(center);
     setElapsed(0);
@@ -206,11 +222,12 @@ export function RunPage() {
   }
 
   if (phase === "live") {
-    const accent = kind === "walk" ? "bg-step" : "bg-run";
+    const accent = kind === "walk" ? "bg-step text-ink" : "bg-run text-ink";
+    const finishLabel = kind === "walk" ? "Finish walk" : "Finish run";
     return (
       <div className="fixed inset-0 z-50 bg-ink animate-pop">
         <div className="mx-auto flex h-dvh max-w-[430px] flex-col">
-          <div className="relative h-[58%]">
+          <div className="relative min-h-0 flex-1">
             <ActivityMap
               center={center}
               path={path}
@@ -219,35 +236,9 @@ export function RunPage() {
               className="h-full rounded-none"
             />
             <div className="pointer-events-auto absolute left-4 top-[max(0.75rem,env(safe-area-inset-top))] z-[2000]">
-              <BackButton fallback="/run" onClick={stopLive} />
-            </div>
-          </div>
-          <div className="-mt-6 flex-1 rounded-t-3xl bg-ink px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-5">
-            <p className="text-xs uppercase tracking-[0.2em] text-run">
-              Live {kind}
-              {selectedRoute ? ` · ${selectedRoute.name}` : ""}
-            </p>
-            <p className="mt-1 font-mono text-5xl">{formatDuration(elapsed)}</p>
-            <div className="mt-4 grid grid-cols-3 gap-2 text-center">
-              <Stat value={`${liveKm.toFixed(2)}`} label="km" />
-              <Stat value={formatPace(elapsed, liveKm).replace("/km", "")} label="/km" />
-              <Stat value={`${liveCals}`} label="kcal" />
-            </div>
-            {selectedRoute ? (
-              <p className="mt-3 text-center text-sm text-fog">
-                <Navigation size={12} className="mr-1 inline" />
-                {remainingKm.toFixed(2)} km left on plan
-              </p>
-            ) : null}
-            <div className="mt-5 flex gap-2">
-              <button
-                type="button"
-                className="flex-1 rounded-2xl bg-card-2 py-3"
+              <BackButton
+                fallback="/run"
                 onClick={() => {
-                  if (elapsed < 15 && liveKm < 0.05) {
-                    stopLive();
-                    return;
-                  }
                   if (!confirmDiscard) {
                     setConfirmDiscard(true);
                     return;
@@ -255,13 +246,48 @@ export function RunPage() {
                   stopLive();
                   showToast(kind === "walk" ? "Walk discarded" : "Run discarded");
                 }}
-              >
-                {confirmDiscard ? "Tap again to discard" : "Discard"}
-              </button>
-              <button type="button" className={`flex-1 rounded-2xl ${accent} py-3 font-semibold text-ink`} onClick={finishLive}>
-                Finish
-              </button>
+              />
             </div>
+          </div>
+          <div className="z-10 shrink-0 rounded-t-3xl border-t border-line bg-ink px-4 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+            <p className="text-xs uppercase tracking-[0.2em] text-run">
+              Live {kind}
+              {selectedRoute ? ` · ${selectedRoute.name}` : ""}
+            </p>
+            <p className="mt-1 font-mono text-5xl">{formatDuration(elapsed)}</p>
+            <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+              <Stat value={`${liveKm.toFixed(2)}`} label="km" />
+              <Stat value={formatPace(elapsed, liveKm).replace("/km", "")} label="/km" />
+              <Stat value={`${liveCals}`} label="kcal" />
+            </div>
+            {selectedRoute ? (
+              <p className="mt-2 text-center text-sm text-fog">
+                <Navigation size={12} className="mr-1 inline" />
+                {remainingKm.toFixed(2)} km left · finishes and saves at 0
+              </p>
+            ) : null}
+            {gpsError ? <p className="mt-2 text-center text-sm text-run">{gpsError}</p> : null}
+            <button
+              type="button"
+              className={`mt-4 w-full rounded-2xl py-4 text-lg font-semibold ${accent}`}
+              onClick={finishLive}
+            >
+              {finishLabel}
+            </button>
+            <button
+              type="button"
+              className="mt-2 w-full py-2 text-sm text-fog"
+              onClick={() => {
+                if (!confirmDiscard) {
+                  setConfirmDiscard(true);
+                  return;
+                }
+                stopLive();
+                showToast(kind === "walk" ? "Walk discarded" : "Run discarded");
+              }}
+            >
+              {confirmDiscard ? "Tap again to discard without saving" : "Discard"}
+            </button>
           </div>
         </div>
       </div>
