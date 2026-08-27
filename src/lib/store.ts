@@ -279,11 +279,20 @@ export function updateProfile(patch: Partial<Profile>) {
 }
 
 export function addRun(run: RunLog) {
-  emit({ ...state, runs: [{ ...run, source: run.source ?? "manual" }, ...state.runs] });
+  const entry = { ...run, source: run.source ?? "manual" };
+  emit({
+    ...state,
+    runs: state.runs.some((item) => item.id === entry.id) ? state.runs : [entry, ...state.runs],
+  });
 }
 
 export function addWorkout(workout: WorkoutLog) {
-  emit({ ...state, workouts: [workout, ...state.workouts] });
+  emit({
+    ...state,
+    workouts: state.workouts.some((item) => item.id === workout.id)
+      ? state.workouts
+      : [workout, ...state.workouts],
+  });
 }
 
 export function removeRun(id: string) {
@@ -323,7 +332,7 @@ export function logFoodItem(input: {
 export function addFood(food: FoodLog) {
   emit({
     ...state,
-    foods: [food, ...state.foods],
+    foods: state.foods.some((item) => item.id === food.id) ? state.foods : [food, ...state.foods],
     recentFoods: food.foodId ? trackRecent(food.foodId, food.grams) : state.recentFoods,
   });
 }
