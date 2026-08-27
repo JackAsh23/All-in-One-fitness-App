@@ -8,8 +8,10 @@ import { initCapacitor } from "./lib/capacitor";
 import { ensureGithubPagesPath } from "./lib/githubPagesPath";
 import { routerBasename } from "./lib/routerBasename";
 import { initStore } from "./lib/store";
+import { lockViewportZoom } from "./lib/lockViewportZoom";
 import "./index.css";
 
+lockViewportZoom();
 ensureGithubPagesPath();
 
 if (import.meta.env.PROD && !Capacitor.isNativePlatform()) {

@@ -180,6 +180,7 @@ export function WorkoutPage() {
     setSession(next);
     setHoldRunning(false);
     setHoldRemaining(holdTarget);
+    if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
     startRest(restSec);
   }
 
@@ -363,7 +364,7 @@ export function WorkoutPage() {
               </ul>
             )}
             {isTimedExercise(current.name, current.targetReps) ? (
-              <div className="space-y-3">
+              <div className="space-y-5">
                 <div className="rounded-3xl bg-ink px-4 py-6 text-center">
                   <p className="text-xs uppercase tracking-[0.2em] text-lift">
                     {holdRunning ? "Hold" : "Ready"}
@@ -401,6 +402,7 @@ export function WorkoutPage() {
                     className="rounded-2xl bg-lift py-3 font-semibold text-ink disabled:opacity-40"
                     disabled={holdRunning}
                     onClick={() => {
+                      if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
                       void unlockTimerSound();
                       setHoldRemaining(holdTarget);
                       setHoldRunning(true);
@@ -451,7 +453,7 @@ export function WorkoutPage() {
                     />
                   </label>
                 </div>
-                <button type="button" onClick={logSet} className="mt-3 w-full rounded-2xl bg-lift py-3 font-semibold text-ink">
+                <button type="button" onClick={logSet} className="mt-4 w-full rounded-2xl bg-lift py-3 font-semibold text-ink">
                   Log set
                 </button>
               </>
