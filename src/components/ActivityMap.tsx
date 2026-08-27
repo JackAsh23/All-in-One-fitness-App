@@ -8,19 +8,37 @@ type Props = {
   center: GeoPoint;
   path?: GeoPoint[];
   route?: GeoPoint[];
+  waypoints?: GeoPoint[];
   follow?: boolean;
   drawMode?: boolean;
   onAddPoint?: (point: GeoPoint) => void;
+  onMoveWaypoint?: (index: number, point: GeoPoint) => void;
+  onDeleteWaypoint?: (index: number) => void;
   className?: string;
 };
+
+function waypointIcon(index: number, total: number) {
+  const isStart = index === 0;
+  const isEnd = total > 1 && index === total - 1;
+  const bg = isStart ? "#3ee07f" : isEnd ? "#ff6b4a" : "#7aa6ff";
+  return L.divIcon({
+    className: "waypoint-pin",
+    html: `<div class="waypoint-pin-inner" style="background:${bg}">${index + 1}</div>`,
+    iconSize: [30, 30],
+    iconAnchor: [15, 15],
+  });
+}
 
 export function ActivityMap({
   center,
   path = [],
   route = [],
+  waypoints = [],
   follow = true,
   drawMode = false,
   onAddPoint,
+  onMoveWaypoint,
+  onDeleteWaypoint,
   className = "",
 }: Props) {
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -30,7 +48,11 @@ export function ActivityMap({
   const markerRef = useRef<L.CircleMarker | null>(null);
   const dotsRef = useRef<L.LayerGroup | null>(null);
   const onAddRef = useRef(onAddPoint);
+  const onMoveRef = useRef(onMoveWaypoint);
+  const onDeleteRef = useRef(onDeleteWaypoint);
   onAddRef.current = onAddPoint;
+  onMoveRef.current = onMoveWaypoint;
+  onDeleteRef.current = onDeleteWaypoint;
 
   useEffect(() => {
     const el = wrapRef.current;
@@ -99,17 +121,38 @@ export function ActivityMap({
     pathRef.current?.setLatLngs(path.map((p) => L.latLng(p.lat, p.lng)));
     routeRef.current?.setLatLngs(route.map((p) => L.latLng(p.lat, p.lng)));
     markerRef.current?.setLatLng([center.lat, center.lng]);
+    if (drawMode) {
+      markerRef.current?.setStyle({ opacity: 0, fillOpacity: 0 });
+    } else {
+      markerRef.current?.setStyle({ opacity: 1, fillOpacity: 1 });
+    }
 
     dotsRef.current?.clearLayers();
     if (drawMode) {
-      route.forEach((point, index) => {
-        L.circleMarker([point.lat, point.lng], {
-          radius: index === 0 ? 7 : 5,
-          color: "#07090c",
-          weight: 2,
-          fillColor: index === 0 ? "#3ee07f" : "#7aa6ff",
-          fillOpacity: 1,
-        }).addTo(dotsRef.current!);
+      waypoints.forEach((point, index) => {
+        let suppressClick = false;
+        const marker = L.marker([point.lat, point.lng], {
+          icon: waypointIcon(index, waypoints.length),
+          draggable: true,
+          autoPan: true,
+          bubblingMouseEvents: false,
+          keyboard: false,
+          zIndexOffset: 1000,
+        });
+        marker.on("click", (event) => {
+          L.DomEvent.stopPropagation(event);
+          if (suppressClick) {
+            suppressClick = false;
+            return;
+          }
+          onDeleteRef.current?.(index);
+        });
+        marker.on("dragend", (event) => {
+          suppressClick = true;
+          const ll = event.target.getLatLng();
+          onMoveRef.current?.(index, { lat: ll.lat, lng: ll.lng });
+        });
+        marker.addTo(dotsRef.current!);
       });
     }
 
@@ -123,7 +166,7 @@ export function ActivityMap({
     } else if (route.length > 1) {
       map.fitBounds(L.latLngBounds(route.map((p) => L.latLng(p.lat, p.lng))), { padding: [28, 28] });
     }
-  }, [center, path, route, follow, drawMode]);
+  }, [center, path, route, waypoints, follow, drawMode]);
 
   return <div ref={wrapRef} className={`overflow-hidden rounded-3xl ${className}`} />;
 }

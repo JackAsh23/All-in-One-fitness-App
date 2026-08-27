@@ -12,7 +12,7 @@ import { defaultCenter, gpsPathUpdate, kcalForDistance, pathDistanceKm, requestG
 import { newDraftRoute, presetRoutes } from "../lib/routes";
 import { summarizeDay } from "../lib/scoring";
 import { addRun, removeRoute, removeRun, saveRoute, useAppState } from "../lib/store";
-import { appendRoutedPoint } from "../lib/osrm";
+import { appendRoutedPoint, rebuildRoutedPath } from "../lib/osrm";
 import { showToast } from "../lib/toast";
 import type { GeoPoint, RoutePlan, SportKind } from "../lib/types";
 
@@ -43,6 +43,8 @@ export function RunPage() {
   const pendingPhase = useRef<Phase>("live");
   const watchOff = useRef<(() => void) | null>(null);
   const draftRef = useRef<RoutePlan | null>(null);
+  const routeGen = useRef(0);
+  const moveTimer = useRef(0);
   const elapsedRef = useRef(0);
   const pathRef = useRef<GeoPoint[]>([]);
   const finishingRef = useRef(false);
@@ -60,7 +62,10 @@ export function RunPage() {
   }, [phase]);
 
   useEffect(() => {
-    return () => watchOff.current?.();
+    return () => {
+      watchOff.current?.();
+      window.clearTimeout(moveTimer.current);
+    };
   }, []);
 
   const liveKm = pathDistanceKm(path);
@@ -179,12 +184,15 @@ export function RunPage() {
 
   async function addPlanPoint(point: GeoPoint) {
     if (routingBusy) return;
+    const gen = ++routeGen.current;
     setRoutingBusy(true);
     setRouteHint("Snapping to walkable paths…");
     try {
       const base = draftRef.current ?? newDraftRoute(kind, []);
       const points = await appendRoutedPoint(base.points, point);
-      const waypoints = [...(base.waypoints ?? []), point];
+      if (gen !== routeGen.current) return;
+      const snapped = points[points.length - 1] ?? point;
+      const waypoints = [...(base.waypoints ?? []), snapped];
       setDraft({
         ...base,
         waypoints,
@@ -192,12 +200,71 @@ export function RunPage() {
         distanceKm: Math.round(pathDistanceKm(points) * 100) / 100,
       });
       setCenter(points[points.length - 1] ?? point);
-      setRouteHint("Line follows footpaths and roads people can use.");
+      setRouteHint("Drag a pin to tweak the path · tap a pin to delete it.");
     } catch {
+      if (gen !== routeGen.current) return;
       setRouteHint("Could not reach the map router — dropped a straight point.");
     } finally {
-      setRoutingBusy(false);
+      if (gen === routeGen.current) setRoutingBusy(false);
     }
+  }
+
+  async function applyWaypoints(waypoints: GeoPoint[], hint: string) {
+    const gen = ++routeGen.current;
+    window.clearTimeout(moveTimer.current);
+    if (waypoints.length === 0) {
+      const base = draftRef.current ?? newDraftRoute(kind, []);
+      setDraft({ ...base, waypoints: [], points: [], distanceKm: 0 });
+      setRouteHint("Tap the map to drop a pin.");
+      setRoutingBusy(false);
+      return;
+    }
+    setRoutingBusy(true);
+    setRouteHint(hint);
+    try {
+      const rebuilt = await rebuildRoutedPath(waypoints);
+      if (gen !== routeGen.current) return;
+      const base = draftRef.current ?? newDraftRoute(kind, []);
+      setDraft({
+        ...base,
+        waypoints: rebuilt.waypoints,
+        points: rebuilt.points,
+        distanceKm: Math.round(rebuilt.distanceKm * 100) / 100,
+      });
+      setRouteHint("Drag a pin to tweak the path · tap a pin to delete it.");
+    } catch {
+      if (gen !== routeGen.current) return;
+      setRouteHint("Could not reroute — try moving the pin again.");
+    } finally {
+      if (gen === routeGen.current) setRoutingBusy(false);
+    }
+  }
+
+  function movePlanWaypoint(index: number, point: GeoPoint) {
+    const base = draftRef.current;
+    if (!base) return;
+    const waypoints = [...(base.waypoints ?? [])];
+    if (index < 0 || index >= waypoints.length) return;
+    waypoints[index] = point;
+    setDraft({ ...base, waypoints });
+    window.clearTimeout(moveTimer.current);
+    moveTimer.current = window.setTimeout(() => {
+      void applyWaypoints(waypoints, "Rerouting…");
+    }, 180);
+  }
+
+  function deletePlanWaypoint(index: number) {
+    const base = draftRef.current;
+    if (!base?.waypoints?.length) return;
+    if (index < 0 || index >= base.waypoints.length) return;
+    const waypoints = base.waypoints.filter((_, i) => i !== index);
+    void applyWaypoints(waypoints, "Removing pin…");
+  }
+
+  function removeLastWaypoint() {
+    const base = draftRef.current;
+    if (!base?.waypoints?.length) return;
+    void applyWaypoints(base.waypoints.slice(0, -1), "Removing last pin…");
   }
 
   function followDraft() {
@@ -293,9 +360,12 @@ export function RunPage() {
             <ActivityMap
               center={center}
               route={draft?.points ?? []}
+              waypoints={draft?.waypoints ?? []}
               follow={false}
               drawMode
               onAddPoint={addPlanPoint}
+              onMoveWaypoint={movePlanWaypoint}
+              onDeleteWaypoint={deletePlanWaypoint}
               className="h-full rounded-none"
             />
             <div className="pointer-events-auto absolute left-4 top-[max(0.75rem,env(safe-area-inset-top))] z-[2000]">
@@ -309,15 +379,25 @@ export function RunPage() {
             </div>
           </div>
           <div className="-mt-6 flex-1 rounded-t-3xl bg-ink px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-5">
-            <p className="text-xs uppercase tracking-[0.2em] text-step">Tap the map to drop waypoints</p>
+            <p className="text-xs uppercase tracking-[0.2em] text-step">Tap the map to drop pins</p>
             <h2 className="mt-1 text-2xl font-semibold">{draft?.distanceKm.toFixed(2) ?? "0.00"} km planned</h2>
             <p className="text-sm text-fog">
-              {draft?.waypoints?.length ?? draft?.points.length ?? 0} stops · {kind}
+              {draft?.waypoints?.length ?? 0}{" "}
+              {(draft?.waypoints?.length ?? 0) === 1 ? "pin" : "pins"} · {kind}
               {routingBusy ? " · routing…" : ""}
             </p>
             <p className="mt-1 text-xs text-fog">
-              {routeHint ?? "The line snaps to walkable paths instead of cutting through buildings."}
+              {routeHint ?? "Drag a pin to tweak the path · tap a pin to delete it."}
             </p>
+            {(draft?.waypoints?.length ?? 0) > 0 ? (
+              <button
+                type="button"
+                className="mt-2 w-full rounded-2xl border border-line py-2.5 text-sm text-fog"
+                onClick={removeLastWaypoint}
+              >
+                Remove last pin
+              </button>
+            ) : null}
             <input
               value={routeName}
               onChange={(event) => setRouteName(event.target.value)}
