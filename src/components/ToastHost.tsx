@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { Check } from "lucide-react";
 import { subscribeToast, type ToastAction } from "../lib/toast";
 
 const SHOW_MS = 2400;
+const UNDO_MS = 5000;
 const EXIT_MS = 180;
 
 export function ToastHost() {
@@ -20,9 +22,9 @@ export function ToastHost() {
 
   useEffect(() => {
     if (!message || leaving) return;
-    const hide = window.setTimeout(() => setLeaving(true), SHOW_MS);
+    const hide = window.setTimeout(() => setLeaving(true), action ? UNDO_MS : SHOW_MS);
     return () => window.clearTimeout(hide);
-  }, [message, leaving]);
+  }, [message, action, leaving]);
 
   useEffect(() => {
     if (!leaving) return;
@@ -34,15 +36,15 @@ export function ToastHost() {
     return () => window.clearTimeout(clear);
   }, [leaving]);
 
-  if (!message) return null;
+  if (!message || typeof document === "undefined") return null;
 
-  return (
+  return createPortal(
     <div
-      className="pointer-events-none fixed left-1/2 z-[90] w-[min(90%,20rem)] -translate-x-1/2"
+      className="pointer-events-none fixed left-1/2 z-[100] w-[min(90%,20rem)] -translate-x-1/2"
       style={{ bottom: "calc(5.4rem + env(safe-area-inset-bottom, 0px))" }}
     >
       <div
-        className={`toast-pop flex items-center justify-center gap-3 rounded-2xl border border-life/40 bg-ink-2/95 px-4 py-3 text-center shadow-[0_12px_32px_rgba(0,0,0,0.45)] backdrop-blur${leaving ? " is-leaving" : ""}`}
+        className={`toast-pop pointer-events-auto flex items-center justify-center gap-3 rounded-2xl border border-life/40 bg-ink-2/95 px-4 py-3 text-center shadow-[0_12px_32px_rgba(0,0,0,0.45)] backdrop-blur${leaving ? " is-leaving" : ""}`}
         role="status"
       >
         <p className="flex min-w-0 items-center justify-center gap-2 text-sm font-medium text-snow">
@@ -52,7 +54,7 @@ export function ToastHost() {
         {action ? (
           <button
             type="button"
-            className="pointer-events-auto shrink-0 text-sm font-semibold text-life"
+            className="shrink-0 rounded-full bg-life/15 px-3 py-1.5 text-sm font-semibold text-life"
             onClick={() => {
               action.onClick();
               setLeaving(true);
@@ -62,6 +64,7 @@ export function ToastHost() {
           </button>
         ) : null}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
