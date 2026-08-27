@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Check } from "lucide-react";
 import { subscribeToast } from "../lib/toast";
 
-const SHOW_MS = 1800;
+const SHOW_MS = 2400;
 const EXIT_MS = 180;
 
 export function ToastHost() {
