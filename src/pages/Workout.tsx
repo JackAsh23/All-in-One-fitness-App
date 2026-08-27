@@ -10,7 +10,7 @@ import { EXERCISE_CATALOG, TEMPLATES } from "../lib/exercises";
 import { formatShortDate, nowTime, todayISO, uid, weekdayIndex } from "../lib/dates";
 import { addWorkout, removeCustomPlan, removeWorkout, saveCustomPlan, setTrainingPlan, updateProfile, useAppState } from "../lib/store";
 import { TRAINING_PLANS, resolvePlan, type PlanDay, type TrainingPlan } from "../lib/trainingPlans";
-import { formatWorkoutSet, isTimedExercise, parseTimedTarget, sessionHasLoggedSets } from "../lib/exerciseTiming";
+import { formatWorkoutSet, isTimedExercise, mergeLiftChoice, parseTimedTarget, sessionHasLoggedSets, HOLD_SEC_CHOICES, REP_CHOICES } from "../lib/exerciseTiming";
 import { playTimerDone, unlockTimerSound } from "../lib/timerSound";
 import { showToast } from "../lib/toast";
 import { CustomPlanSheet } from "../components/CustomPlanSheet";
@@ -51,6 +51,8 @@ export function WorkoutPage() {
   const hadRestRef = useRef(false);
   const holdTarget = Math.max(1, Number(holdSec) || 45);
   const restActive = rest > 0;
+  const repOptions = useMemo(() => mergeLiftChoice(REP_CHOICES, Number(reps)), [reps]);
+  const holdOptions = useMemo(() => mergeLiftChoice(HOLD_SEC_CHOICES, holdTarget), [holdTarget]);
 
   useEffect(() => {
     if (!restActive) return;
@@ -382,21 +384,18 @@ export function WorkoutPage() {
                     {holdRunning ? "Logs automatically at 0" : `Target ${holdTarget}s`}
                   </p>
                 </div>
-                <label className="block text-sm text-fog">
-                  Target seconds
-                  <input
-                    value={holdSec}
-                    disabled={holdRunning}
-                    onChange={(event) => {
-                      setHoldSec(event.target.value);
-                      const next = Math.max(1, Number(event.target.value) || 45);
-                      if (!holdRunning) setHoldRemaining(next);
-                    }}
-                    className="mt-1 w-full rounded-2xl border border-line bg-ink px-3 py-3 text-base text-snow disabled:opacity-50"
-                    inputMode="numeric"
-                    data-testid="hold-seconds"
-                  />
-                </label>
+                <LiftSelect
+                  label="Target seconds"
+                  value={String(holdTarget)}
+                  options={holdOptions}
+                  disabled={holdRunning}
+                  suffix="s"
+                  testId="hold-seconds"
+                  onChange={(value) => {
+                    setHoldSec(value);
+                    if (!holdRunning) setHoldRemaining(Number(value) || 45);
+                  }}
+                />
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
@@ -445,15 +444,13 @@ export function WorkoutPage() {
                       inputMode="decimal"
                     />
                   </label>
-                  <label className="text-sm text-fog">
-                    reps
-                    <input
-                      value={reps}
-                      onChange={(event) => setReps(event.target.value)}
-                      className="mt-1 w-full rounded-2xl border border-line bg-ink px-3 py-3 text-base text-snow"
-                      inputMode="numeric"
-                    />
-                  </label>
+                  <LiftSelect
+                    label="Reps"
+                    value={reps}
+                    options={repOptions}
+                    onChange={setReps}
+                    testId="set-reps"
+                  />
                 </div>
                 <button type="button" onClick={logSet} className="mt-5 w-full rounded-2xl bg-lift py-3 font-semibold text-ink">
                   Log set
@@ -723,6 +720,46 @@ export function WorkoutPage() {
         }}
       />
     </div>
+  );
+}
+
+function LiftSelect({
+  label,
+  value,
+  options,
+  onChange,
+  disabled,
+  suffix,
+  testId,
+}: {
+  label: string;
+  value: string;
+  options: number[];
+  onChange: (value: string) => void;
+  disabled?: boolean;
+  suffix?: string;
+  testId?: string;
+}) {
+  return (
+    <label className="block text-sm text-fog">
+      {label}
+      <span className="relative mt-1 block">
+        <select
+          value={value}
+          disabled={disabled}
+          data-testid={testId}
+          onChange={(event) => onChange(event.target.value)}
+          className="w-full rounded-2xl border border-line bg-ink px-3 py-3 pr-10 text-base text-snow outline-none disabled:opacity-50"
+        >
+          {options.map((n) => (
+            <option key={n} value={String(n)}>
+              {suffix ? `${n}${suffix}` : n}
+            </option>
+          ))}
+        </select>
+        <ChevronDown size={18} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-fog" />
+      </span>
+    </label>
   );
 }
 

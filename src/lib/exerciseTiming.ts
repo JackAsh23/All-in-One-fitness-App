@@ -22,3 +22,14 @@ export function formatWorkoutSet(set: { kg: number; reps: number; durationSec?: 
 export function sessionHasLoggedSets(exercises: { sets: unknown[] }[]): boolean {
   return exercises.some((exercise) => exercise.sets.length > 0);
 }
+
+export const REP_CHOICES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 20, 25, 30];
+export const HOLD_SEC_CHOICES = [10, 15, 20, 30, 45, 60, 75, 90, 120, 150, 180];
+
+/** Keep the current/prescription value in the picker even if it is not a preset. */
+export function mergeLiftChoice(choices: readonly number[], extra?: number | null): number[] {
+  if (extra == null || !Number.isFinite(extra) || extra <= 0) return [...choices];
+  const n = Math.round(extra);
+  if (choices.includes(n)) return [...choices];
+  return [...choices, n].sort((a, b) => a - b);
+}

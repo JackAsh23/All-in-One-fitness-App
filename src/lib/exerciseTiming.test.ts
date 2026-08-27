@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatWorkoutSet, isTimedExercise, parseTimedTarget, sessionHasLoggedSets } from "./exerciseTiming";
+import { formatWorkoutSet, isTimedExercise, mergeLiftChoice, parseTimedTarget, sessionHasLoggedSets, HOLD_SEC_CHOICES, REP_CHOICES } from "./exerciseTiming";
 
 describe("exerciseTiming", () => {
   it("treats plank and 45s prescriptions as timed holds", () => {
@@ -20,5 +20,13 @@ describe("exerciseTiming", () => {
   it("does not count an empty finish as work", () => {
     expect(sessionHasLoggedSets([{ sets: [] }, { sets: [] }])).toBe(false);
     expect(sessionHasLoggedSets([{ sets: [{ kg: 20, reps: 8 }] }])).toBe(true);
+  });
+
+  it("keeps an unusual prescription in the lift dropdown", () => {
+    expect(mergeLiftChoice(REP_CHOICES, 10)).toEqual([...REP_CHOICES]);
+    expect(mergeLiftChoice(REP_CHOICES, 11)).toContain(11);
+    expect(mergeLiftChoice(HOLD_SEC_CHOICES, 45)).toEqual([...HOLD_SEC_CHOICES]);
+    expect(mergeLiftChoice(HOLD_SEC_CHOICES, 40)[0]).toBe(10);
+    expect(mergeLiftChoice(HOLD_SEC_CHOICES, 40)).toContain(40);
   });
 });
