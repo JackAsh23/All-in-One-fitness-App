@@ -237,19 +237,6 @@ export function RunPage() {
               follow
               className="h-full rounded-none"
             />
-            <div className="pointer-events-auto absolute left-4 top-[max(0.75rem,env(safe-area-inset-top))] z-[2000]">
-              <BackButton
-                fallback="/run"
-                onClick={() => {
-                  if (!confirmDiscard) {
-                    setConfirmDiscard(true);
-                    return;
-                  }
-                  stopLive();
-                  showToast(kind === "walk" ? "Walk discarded" : "Run discarded");
-                }}
-              />
-            </div>
           </div>
           <div className="z-10 shrink-0 rounded-t-3xl border-t border-line bg-ink px-4 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
             <p className="text-xs uppercase tracking-[0.2em] text-run">
