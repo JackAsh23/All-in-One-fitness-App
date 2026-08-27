@@ -59,29 +59,29 @@ body {
   box-sizing: border-box;
 }
 
-button,
-input,
-select,
-textarea {
-  font-family: inherit;
-  color: inherit;
-}
+@layer base {
+  button,
+  input,
+  select,
+  textarea {
+    font-family: inherit;
+  }
 
-button {
-  -webkit-appearance: none;
-  appearance: none;
-  background: transparent;
-}
+  button {
+    -webkit-appearance: none;
+    appearance: none;
+  }
 
-button,
-a {
-  -webkit-tap-highlight-color: transparent;
-}
+  button,
+  a {
+    -webkit-tap-highlight-color: transparent;
+  }
 
-input,
-select,
-textarea {
-  color: var(--color-snow);
+  input,
+  select,
+  textarea {
+    color: var(--color-snow);
+  }
 }
 
 input::placeholder,
