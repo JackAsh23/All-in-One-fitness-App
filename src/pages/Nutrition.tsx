@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Barcode, Plus, ScanLine, Search, Star, Utensils, Weight } from "lucide-react";
 import { BarcodeSheet } from "../components/BarcodeSheet";
+import { EditFoodSheet } from "../components/EditFoodSheet";
 import { Card } from "../components/Heatmap";
 import { MacroBar } from "../components/Progress";
 import { MealScanSheet } from "../components/MealScanSheet";
@@ -21,6 +22,7 @@ import {
   removeSavedMeal,
   saveMealFromToday,
   toggleFavoriteFood,
+  updateFoodLog,
   updateFoodPortion,
   updateProfile,
   addFood,
@@ -29,7 +31,7 @@ import {
 import { todayISO } from "../lib/dates";
 import { parseDecimal } from "../lib/numbers";
 import { showToast } from "../lib/toast";
-import type { MealType } from "../lib/types";
+import type { FoodLog, MealType } from "../lib/types";
 
 const MEALS: { id: MealType; label: string; emoji: string }[] = [
   { id: "breakfast", label: "Breakfast", emoji: "🍳" },
@@ -53,6 +55,7 @@ export function NutritionPage() {
   const [barcodeOpen, setBarcodeOpen] = useState(false);
   const [barcodeLoading, setBarcodeLoading] = useState(false);
   const [scanOpen, setScanOpen] = useState(false);
+  const [editing, setEditing] = useState<FoodLog | null>(null);
   const [selectedId, setSelectedId] = useState(FOODS[0]?.id);
   const [quickName, setQuickName] = useState("");
   const [quickCal, setQuickCal] = useState("");
@@ -396,13 +399,17 @@ export function NutritionPage() {
                   {items.map((food) => (
                     <li key={food.id} className="rounded-2xl bg-ink px-3 py-3">
                       <div className="mb-2 flex items-start justify-between gap-2">
-                        <div className="min-w-0">
+                        <button
+                          type="button"
+                          className="min-w-0 flex-1 text-left"
+                          onClick={() => setEditing(food)}
+                        >
                           <p className="truncate font-medium">{food.name}</p>
                           <p className="text-xs text-fog">
                             {food.calories} kcal · P{Math.round(food.protein)} C{Math.round(food.carbs)} F
-                            {Math.round(food.fat)}
+                            {Math.round(food.fat)} · tap to edit
                           </p>
-                        </div>
+                        </button>
                         <button
                           type="button"
                           className="shrink-0 text-xs font-medium text-snow"
@@ -641,6 +648,23 @@ export function NutritionPage() {
             logFoodItem({ foodId: item.foodId, grams: item.grams, meal, date: viewDate });
           }
           showToast(`${scanned.name} logged`);
+        }}
+      />
+      <EditFoodSheet
+        food={editing}
+        onClose={() => setEditing(null)}
+        onSave={(id, patch) => {
+          updateFoodLog(id, patch);
+          setEditing(null);
+          showToast("Food updated");
+        }}
+        onRemove={(item) => {
+          removeFood(item.id);
+          setEditing(null);
+          showToast("Food removed", {
+            label: "Undo",
+            onClick: () => addFood(item),
+          });
         }}
       />
 

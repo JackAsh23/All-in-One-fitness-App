@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  applyFoodLogPatch,
   caloriesFromMacros,
   defaultMealType,
   parseCaloriesInput,
@@ -82,5 +83,43 @@ describe("parseQuickAdd", () => {
   it("parses comma decimals", () => {
     expect(parseMacroGrams("20,5")).toBe(20.5);
     expect(parseCaloriesInput("251,4")).toBe(251);
+  });
+});
+
+const logged = {
+  id: "food_1",
+  date: "2026-08-27",
+  time: "12:00",
+  meal: "lunch" as const,
+  name: "Chicken breast, grilled",
+  foodId: "chicken-breast",
+  grams: 150,
+  calories: 248,
+  protein: 46.5,
+  carbs: 0,
+  fat: 5.4,
+};
+
+describe("applyFoodLogPatch", () => {
+  it("rejects a blank name", () => {
+    expect(applyFoodLogPatch(logged, { name: "  " })).toBeNull();
+  });
+
+  it("rescales catalog macros when only grams change", () => {
+    const next = applyFoodLogPatch(logged, { grams: 100 }, {
+      id: "chicken-breast",
+      name: "Chicken breast, grilled",
+      category: "Protein",
+      per100g: { calories: 165, protein: 31, carbs: 0, fat: 3.6 },
+    });
+    expect(next?.grams).toBe(100);
+    expect(next?.calories).toBe(165);
+    expect(next?.protein).toBe(31);
+  });
+
+  it("keeps typed macros when the user edits protein after a portion change", () => {
+    const next = applyFoodLogPatch(logged, { grams: 100, protein: 40, carbs: 0, fat: 3.6, calories: 200 });
+    expect(next?.protein).toBe(40);
+    expect(next?.calories).toBe(200);
   });
 });

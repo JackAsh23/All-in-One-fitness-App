@@ -1,8 +1,8 @@
 import type { FoodItem } from "./foods";
-import { FOODS } from "./foods";
+import { FOODS, macrosForGrams } from "./foods";
 import { parseDecimal } from "./numbers";
 import { getCachedOffFood } from "./openFoodFacts";
-import type { MealType } from "./types";
+import type { FoodLog, MealType } from "./types";
 
 /** Atwater factors: protein and carbs 4 kcal/g, fat 9 kcal/g. */
 export function caloriesFromMacros(protein: number, carbs: number, fat: number): number {
@@ -44,6 +44,35 @@ export function parseQuickAdd(input: {
   const fat = parseMacroGrams(input.fat);
   if (!name || calories == null || protein == null || carbs == null || fat == null) return null;
   return { name, calories, protein, carbs, fat };
+}
+
+export function applyFoodLogPatch(
+  target: FoodLog,
+  patch: Partial<Pick<FoodLog, "name" | "meal" | "grams" | "calories" | "protein" | "carbs" | "fat">>,
+  catalog?: FoodItem,
+): FoodLog | null {
+  const name = (patch.name ?? target.name).trim();
+  if (!name) return null;
+  const meal = patch.meal ?? target.meal;
+  const grams = patch.grams ?? target.grams;
+  if (!Number.isFinite(grams) || grams <= 0) return null;
+
+  const macrosTouched =
+    patch.calories != null || patch.protein != null || patch.carbs != null || patch.fat != null;
+  let calories: number;
+  let protein: number;
+  let carbs: number;
+  let fat: number;
+  if (catalog && patch.grams != null && !macrosTouched) {
+    ({ calories, protein, carbs, fat } = macrosForGrams(catalog, grams));
+  } else {
+    calories = Math.round(patch.calories ?? target.calories);
+    protein = Math.round((patch.protein ?? target.protein) * 10) / 10;
+    carbs = Math.round((patch.carbs ?? target.carbs) * 10) / 10;
+    fat = Math.round((patch.fat ?? target.fat) * 10) / 10;
+  }
+  if (![calories, protein, carbs, fat].every((n) => Number.isFinite(n) && n >= 0)) return null;
+  return { ...target, name, meal, grams, calories, protein, carbs, fat };
 }
 
 export function getFoodById(id: string): FoodItem | undefined {

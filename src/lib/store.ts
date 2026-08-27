@@ -3,7 +3,7 @@ import { createBlankState, createDemoState } from "./demo";
 import { defaultIntegrations } from "./integrations";
 import { preferPersistedState, looksLikeSeededDemo } from "./persistChoice";
 import { defaultPriorities } from "./scoring";
-import { getFoodById } from "./nutrition";
+import { getFoodById, applyFoodLogPatch } from "./nutrition";
 import { runSync } from "./sync";
 import { fetchStravaRuns } from "./strava/activities";
 import { tokenToStravaAuth, exchangeStravaCode } from "./strava/config";
@@ -338,22 +338,21 @@ export function addFood(food: FoodLog) {
 }
 
 export function updateFoodPortion(id: string, grams: number) {
+  updateFoodLog(id, { grams });
+}
+
+export function updateFoodLog(
+  id: string,
+  patch: Partial<Pick<FoodLog, "name" | "meal" | "grams" | "calories" | "protein" | "carbs" | "fat">>,
+) {
   const target = state.foods.find((food) => food.id === id);
   if (!target) return;
-  const food = target.foodId ? getFoodById(target.foodId) : undefined;
-  const macros = food
-    ? macrosForGrams(food, grams)
-    : {
-        calories: Math.round((target.calories / target.grams) * grams),
-        protein: Math.round((target.protein / target.grams) * grams * 10) / 10,
-        carbs: Math.round((target.carbs / target.grams) * grams * 10) / 10,
-        fat: Math.round((target.fat / target.grams) * grams * 10) / 10,
-      };
+  const catalog = target.foodId ? getFoodById(target.foodId) : undefined;
+  const next = applyFoodLogPatch(target, patch, catalog);
+  if (!next) return;
   emit({
     ...state,
-    foods: state.foods.map((item) =>
-      item.id === id ? { ...item, grams, ...macros } : item,
-    ),
+    foods: state.foods.map((item) => (item.id === id ? next : item)),
   });
 }
 
