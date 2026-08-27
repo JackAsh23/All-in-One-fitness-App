@@ -1,3 +1,4 @@
+import { pathDistanceKm } from "./geo";
 import type { GeoPoint } from "./types";
 
 const OSRM_FOOT = "https://router.project-osrm.org";
@@ -51,4 +52,45 @@ export async function appendRoutedPoint(
   const routed = await routeAlongFootpaths(from, snapped);
   if (!routed || routed.length < 2) return [...path, snapped];
   return [...path, ...routed.slice(1)];
+}
+
+/** Rebuild a planned path from user pins (after a drag or delete). */
+export async function rebuildRoutedPath(waypoints: GeoPoint[]): Promise<{
+  points: GeoPoint[];
+  waypoints: GeoPoint[];
+  distanceKm: number;
+}> {
+  if (waypoints.length === 0) {
+    return { points: [], waypoints: [], distanceKm: 0 };
+  }
+
+  const snapped: GeoPoint[] = [];
+  for (const waypoint of waypoints) {
+    snapped.push(await snapToFootpath(waypoint));
+  }
+
+  if (snapped.length === 1) {
+    return { points: [...snapped], waypoints: snapped, distanceKm: 0 };
+  }
+
+  const points: GeoPoint[] = [];
+  for (let i = 1; i < snapped.length; i += 1) {
+    const routed = await routeAlongFootpaths(snapped[i - 1], snapped[i]);
+    if (!routed || routed.length < 2) {
+      if (points.length === 0) points.push(snapped[i - 1]);
+      points.push(snapped[i]);
+      continue;
+    }
+    if (points.length === 0) {
+      points.push(...routed);
+    } else {
+      points.push(...routed.slice(1));
+    }
+  }
+
+  return {
+    points,
+    waypoints: snapped,
+    distanceKm: pathDistanceKm(points),
+  };
 }

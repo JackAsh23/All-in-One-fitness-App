@@ -241,3 +241,27 @@ textarea {
 .leaflet-control-attribution a {
   color: #5eead4 !important;
 }
+
+.waypoint-pin {
+  background: none !important;
+  border: none !important;
+}
+
+.waypoint-pin-inner {
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  border: 2px solid #f4f7fa;
+  color: #07090c;
+  font-size: 12px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.45);
+  line-height: 1;
+}
+
+.leaflet-marker-dragging .waypoint-pin-inner {
+  transform: scale(1.12);
+}
