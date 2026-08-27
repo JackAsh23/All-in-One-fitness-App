@@ -21,6 +21,8 @@ npm run dev
 
 Open [http://localhost:5173](http://localhost:5173). The first load starts empty so you can track for real. Use **Reload demo year** on Profile if you want the sample 17-week history.
 
+Run maps use a dark basemap. For MapTiler Streets Dark, copy `.env.example` to `.env.local`, add a free key from [MapTiler Cloud](https://cloud.maptiler.com/account/keys/), and restrict it to `http://localhost:5173/*` plus `https://jackash23.github.io/*`. GitHub Pages reads the same key from repo secret `VITE_MAPTILER_KEY`. Without a key the app falls back to CARTO Dark Matter (still dark, still free).
+
 ```bash
 npm run build        # production build → dist/
 npm run build:pages  # GitHub Pages base path

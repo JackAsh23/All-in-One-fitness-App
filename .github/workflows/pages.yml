@@ -31,6 +31,7 @@ jobs:
         env:
           VITE_STRAVA_CLIENT_ID: ${{ secrets.VITE_STRAVA_CLIENT_ID }}
           VITE_STRAVA_TOKEN_PROXY: ${{ secrets.VITE_STRAVA_TOKEN_PROXY }}
+          VITE_MAPTILER_KEY: ${{ secrets.VITE_MAPTILER_KEY }}
       - uses: actions/upload-pages-artifact@v5
         with:
           path: dist

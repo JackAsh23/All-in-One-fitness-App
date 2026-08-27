@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { darkBasemap } from "../lib/mapTiles";
 import type { GeoPoint } from "../lib/types";
 
 type Props = {
@@ -39,10 +40,8 @@ export function ActivityMap({
       attributionControl: true,
     }).setView([center.lat, center.lng], 15);
 
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 19,
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>',
-    }).addTo(map);
+    const basemap = darkBasemap();
+    L.tileLayer(basemap.url, basemap.options).addTo(map);
 
     L.control.zoom({ position: "bottomright" }).addTo(map);
 
