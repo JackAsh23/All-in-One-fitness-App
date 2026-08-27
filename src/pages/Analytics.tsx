@@ -25,7 +25,7 @@ import {
 import { bmiCategory, bodyMassIndex } from "../lib/bmi";
 import { todayISO } from "../lib/dates";
 import { finitePositive, parseDecimal, parseHeightCm } from "../lib/numbers";
-import { logWeight, updateProfile, useAppState } from "../lib/store";
+import { logWeight, setSteps, updateProfile, useAppState } from "../lib/store";
 import { showToast } from "../lib/toast";
 
 type Tab = "run" | "walk" | "lift" | "eat" | "weight" | "steps";
@@ -89,6 +89,8 @@ export function AnalyticsPage() {
     finitePositive(weight.current) != null ? String(weight.current) : "",
   );
   const [weighDate, setWeighDate] = useState(todayISO());
+  const [stepDate, setStepDate] = useState(todayISO());
+  const [stepInput, setStepInput] = useState(String(todaySteps || ""));
   const [heightCm, setHeightCm] = useState(String(state.profile.heightCm ?? ""));
   const heightValue = parseHeightCm(heightCm) ?? finitePositive(state.profile.heightCm) ?? 0;
   const weightValue = parseDecimal(weighIn) ?? finitePositive(weight.current) ?? 0;
@@ -264,6 +266,47 @@ export function AnalyticsPage() {
                 style={{ width: `${Math.min(100, Math.round((todaySteps / Math.max(state.profile.stepGoal, 1)) * 100))}%` }}
               />
             </div>
+          </Card>
+          <Card>
+            <h3 className="mb-3 font-semibold">Log steps</h3>
+            <MonthCalendar
+              selected={stepDate}
+              marked={state.steps.filter((entry) => entry.steps > 0).map((entry) => entry.date)}
+              onSelect={(iso) => {
+                setStepDate(iso);
+                const logged = state.steps.find((entry) => entry.date === iso)?.steps;
+                setStepInput(logged ? String(logged) : "");
+              }}
+              accent="bg-step text-ink"
+            />
+            <div className="mt-3 flex gap-2">
+              <input
+                value={stepInput}
+                onChange={(event) => setStepInput(event.target.value)}
+                className="flex-1 rounded-2xl border border-line bg-ink px-3 py-3"
+                inputMode="numeric"
+                enterKeyHint="done"
+                autoComplete="off"
+                placeholder="steps"
+              />
+              <button
+                type="button"
+                className="rounded-2xl bg-step px-4 py-3 font-semibold text-ink"
+                onClick={() => {
+                  const n = parseDecimal(stepInput);
+                  if (n == null || n < 0) return;
+                  setSteps(stepDate, Math.round(n));
+                  showToast("Steps logged");
+                }}
+              >
+                Log
+              </button>
+            </div>
+            <p className="mt-2 text-xs text-fog">
+              {state.steps.find((entry) => entry.date === stepDate)?.steps
+                ? `${state.steps.find((entry) => entry.date === stepDate)?.steps?.toLocaleString()} steps on this day`
+                : "No steps on this day yet"}
+            </p>
           </Card>
           <Card>
             <h3 className="mb-3 font-semibold">Weekly steps</h3>

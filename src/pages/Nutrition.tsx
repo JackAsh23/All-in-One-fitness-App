@@ -23,6 +23,7 @@ import {
   toggleFavoriteFood,
   updateFoodPortion,
   updateProfile,
+  addFood,
   useAppState,
 } from "../lib/store";
 import { todayISO } from "../lib/dates";
@@ -366,7 +367,17 @@ export function NutritionPage() {
                             {Math.round(food.fat)}
                           </p>
                         </div>
-                        <button type="button" className="shrink-0 text-xs text-fog" onClick={() => removeFood(food.id)}>
+                        <button
+                          type="button"
+                          className="shrink-0 text-xs text-fog"
+                          onClick={() => {
+                            removeFood(food.id);
+                            showToast("Food removed", {
+                              label: "Undo",
+                              onClick: () => addFood(food),
+                            });
+                          }}
+                        >
                           Remove
                         </button>
                       </div>

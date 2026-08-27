@@ -10,7 +10,7 @@ import { addDays, formatDuration, formatPace, formatShortDate, nowTime, todayISO
 import { defaultCenter, haversineKm, kcalForDistance, pathDistanceKm, requestGps, watchGps } from "../lib/geo";
 import { newDraftRoute, presetRoutes } from "../lib/routes";
 import { summarizeDay } from "../lib/scoring";
-import { addRun, removeRoute, saveRoute, useAppState } from "../lib/store";
+import { addRun, removeRoute, removeRun, saveRoute, useAppState } from "../lib/store";
 import { appendRoutedPoint } from "../lib/osrm";
 import { showToast } from "../lib/toast";
 import type { GeoPoint, RoutePlan, SportKind } from "../lib/types";
@@ -34,6 +34,7 @@ export function RunPage() {
   const [routingBusy, setRoutingBusy] = useState(false);
   const [routeHint, setRouteHint] = useState<string | null>(null);
   const [logOpen, setLogOpen] = useState(false);
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
   const [distance, setDistance] = useState("5.0");
   const [minutes, setMinutes] = useState("32");
   const [seconds, setSeconds] = useState("00");
@@ -140,6 +141,7 @@ export function RunPage() {
     setElapsed(0);
     setPath([]);
     setGpsError(null);
+    setConfirmDiscard(false);
   }
 
   function saveManual() {
@@ -238,8 +240,23 @@ export function RunPage() {
               </p>
             ) : null}
             <div className="mt-5 flex gap-2">
-              <button type="button" className="flex-1 rounded-2xl bg-card-2 py-3" onClick={stopLive}>
-                Discard
+              <button
+                type="button"
+                className="flex-1 rounded-2xl bg-card-2 py-3"
+                onClick={() => {
+                  if (elapsed < 15 && liveKm < 0.05) {
+                    stopLive();
+                    return;
+                  }
+                  if (!confirmDiscard) {
+                    setConfirmDiscard(true);
+                    return;
+                  }
+                  stopLive();
+                  showToast(kind === "walk" ? "Walk discarded" : "Run discarded");
+                }}
+              >
+                {confirmDiscard ? "Tap again to discard" : "Discard"}
               </button>
               <button type="button" className={`flex-1 rounded-2xl ${accent} py-3 font-semibold text-ink`} onClick={finishLive}>
                 Finish
@@ -470,26 +487,43 @@ export function RunPage() {
 
       <Card>
         <h3 className="mb-3 font-semibold">History</h3>
-        <ul className="space-y-3">
-          {history.slice(0, 12).map((run) => (
-            <li key={run.id} className="flex items-center justify-between rounded-2xl bg-ink px-3 py-3">
-              <div>
-                <p className="font-medium">
-                  {formatShortDate(run.date)} · {run.kind === "walk" ? "Walk" : "Run"}
-                </p>
-                <p className="text-xs text-fog">
-                  {run.notes ?? "Outdoor"} · {formatSourceLabel(run.source)}
-                </p>
-              </div>
-              <div className="text-right">
-                <p className="font-mono">{run.distanceKm.toFixed(2)} km</p>
-                <p className="text-xs text-fog">
-                  {formatDuration(run.durationSec)} · {formatPace(run.durationSec, run.distanceKm)}
-                </p>
-              </div>
-            </li>
-          ))}
-        </ul>
+        {history.length === 0 ? (
+          <p className="text-sm text-fog">No runs or walks logged yet.</p>
+        ) : (
+          <ul className="space-y-3">
+            {history.slice(0, 12).map((run) => (
+              <li key={run.id} className="flex items-center justify-between gap-2 rounded-2xl bg-ink px-3 py-3">
+                <div className="min-w-0">
+                  <p className="font-medium">
+                    {formatShortDate(run.date)} · {run.kind === "walk" ? "Walk" : "Run"}
+                  </p>
+                  <p className="text-xs text-fog">
+                    {run.notes ?? "Outdoor"} · {formatSourceLabel(run.source)}
+                  </p>
+                </div>
+                <div className="shrink-0 text-right">
+                  <p className="font-mono">{run.distanceKm.toFixed(2)} km</p>
+                  <p className="text-xs text-fog">
+                    {formatDuration(run.durationSec)} · {formatPace(run.durationSec, run.distanceKm)}
+                  </p>
+                  <button
+                    type="button"
+                    className="mt-1 text-xs text-fog"
+                    onClick={() => {
+                      removeRun(run.id);
+                      showToast(`${run.kind === "walk" ? "Walk" : "Run"} deleted`, {
+                        label: "Undo",
+                        onClick: () => addRun(run),
+                      });
+                    }}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
       </Card>
 
       <Sheet open={logOpen} title="Log a session" onClose={() => setLogOpen(false)}>

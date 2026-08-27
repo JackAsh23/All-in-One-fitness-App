@@ -286,6 +286,14 @@ export function addWorkout(workout: WorkoutLog) {
   emit({ ...state, workouts: [workout, ...state.workouts] });
 }
 
+export function removeRun(id: string) {
+  emit({ ...state, runs: state.runs.filter((run) => run.id !== id) });
+}
+
+export function removeWorkout(id: string) {
+  emit({ ...state, workouts: state.workouts.filter((workout) => workout.id !== id) });
+}
+
 export function logFoodItem(input: {
   foodId: string;
   grams: number;

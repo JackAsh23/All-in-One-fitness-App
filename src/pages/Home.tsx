@@ -4,15 +4,18 @@ import { Flame, PersonStanding, Salad, Dumbbell, Footprints, BarChart3 } from "l
 import { Card } from "../components/Heatmap";
 import { MacroBar, ProgressRing } from "../components/Progress";
 import { SyncBanner } from "../components/SyncBanner";
-import { formatDuration, formatLongDate, formatPace, formatTimeLabel, todayISO } from "../lib/dates";
+import { formatDuration, formatLongDate, formatPace, formatTimeLabel, todayISO, weekdayIndex } from "../lib/dates";
 import { currentStreak, summarizeDay } from "../lib/scoring";
 import { useAppState } from "../lib/store";
+import { resolvePlan } from "../lib/trainingPlans";
 
 export function HomePage() {
   const state = useAppState();
   const today = todayISO();
   const day = summarizeDay(state, today);
   const streak = currentStreak(today, (date) => summarizeDay(state, date).score >= 50);
+  const plan = resolvePlan(state.trainingPlanId, state.customPlans);
+  const todayLift = plan?.days.find((day) => day.weekday === weekdayIndex(today)) ?? null;
 
   const timeline = [
     ...state.runs
@@ -80,6 +83,19 @@ export function HomePage() {
       <p className="text-center text-sm text-fog">
         {Math.max(0, state.profile.calorieGoal - day.calories)} kcal left · {Math.max(0, state.profile.proteinGoal - day.protein)}g protein left
       </p>
+
+      {plan ? (
+        <Link
+          to={todayLift ? "/workout?start=1" : "/workout"}
+          className="tap-scale block rounded-3xl border border-lift/40 bg-lift/10 px-4 py-3"
+        >
+          <p className="text-xs uppercase tracking-[0.18em] text-lift">Today’s lift</p>
+          <p className="mt-1 font-semibold">{todayLift ? todayLift.title : "Rest day"}</p>
+          <p className="text-sm text-fog">
+            {todayLift ? `${todayLift.focus} · ${todayLift.exercises.length} exercises · tap to start` : "Open Lift to pick another session"}
+          </p>
+        </Link>
+      ) : null}
 
       <SyncBanner />
 

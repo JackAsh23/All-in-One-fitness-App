@@ -8,7 +8,7 @@ import { Sheet } from "../components/Sheet";
 import { GUIDE_MUSCLES, searchGuideExercises } from "../lib/exerciseArt";
 import { EXERCISE_CATALOG, TEMPLATES } from "../lib/exercises";
 import { formatShortDate, nowTime, todayISO, uid, weekdayIndex } from "../lib/dates";
-import { addWorkout, removeCustomPlan, saveCustomPlan, setTrainingPlan, updateProfile, useAppState } from "../lib/store";
+import { addWorkout, removeCustomPlan, removeWorkout, saveCustomPlan, setTrainingPlan, updateProfile, useAppState } from "../lib/store";
 import { TRAINING_PLANS, resolvePlan, type PlanDay, type TrainingPlan } from "../lib/trainingPlans";
 import { formatWorkoutSet, isTimedExercise, parseTimedTarget, sessionHasLoggedSets } from "../lib/exerciseTiming";
 import { showToast } from "../lib/toast";
@@ -188,6 +188,7 @@ export function WorkoutPage() {
       setSession(null);
       setRest(0);
       setHoldRunning(false);
+      showToast("No sets logged");
       return;
     }
     const durationMin = Math.max(1, Math.round((Date.now() - session.started) / 60000));
@@ -646,9 +647,24 @@ export function WorkoutPage() {
             const sets = workout.exercises.reduce((sum, exercise) => sum + exercise.sets.length, 0);
             return (
               <li key={workout.id} className="rounded-2xl bg-ink px-3 py-3">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-2">
                   <p className="font-medium">{workout.template}</p>
-                  <p className="text-xs text-fog">{formatShortDate(workout.date)}</p>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <p className="text-xs text-fog">{formatShortDate(workout.date)}</p>
+                    <button
+                      type="button"
+                      className="text-xs text-fog"
+                      onClick={() => {
+                        removeWorkout(workout.id);
+                        showToast("Workout deleted", {
+                          label: "Undo",
+                          onClick: () => addWorkout(workout),
+                        });
+                      }}
+                    >
+                      ✕
+                    </button>
+                  </div>
                 </div>
                 <p className="text-sm text-fog">
                   {workout.exercises.length} exercises · {sets} sets · {workout.durationMin} min
