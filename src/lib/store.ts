@@ -414,8 +414,9 @@ export function saveMealFromToday(mealType: MealType, name: string, emoji: strin
   const items = state.foods
     .filter((food) => food.date === today && food.meal === mealType && food.foodId)
     .map((food) => ({ foodId: food.foodId!, grams: food.grams }));
-  if (items.length === 0) return;
+  if (items.length === 0) return false;
   saveSavedMeal({ name, emoji, items });
+  return true;
 }
 
 export function setSteps(date: string, steps: number) {
@@ -599,17 +600,24 @@ export function logQuickFood(input: {
   fat: number;
   date?: string;
 }) {
+  const name = input.name.trim();
+  const calories = Math.round(input.calories);
+  const protein = Math.round(input.protein * 10) / 10;
+  const carbs = Math.round(input.carbs * 10) / 10;
+  const fat = Math.round(input.fat * 10) / 10;
+  if (!name) return;
+  if (![calories, protein, carbs, fat].every((n) => Number.isFinite(n) && n >= 0)) return;
   const entry: FoodLog = {
     id: uid("food"),
     date: input.date ?? todayISO(),
     time: nowTime(),
     meal: input.meal,
-    name: input.name.trim() || "Quick add",
+    name,
     grams: 1,
-    calories: Math.round(input.calories),
-    protein: input.protein,
-    carbs: input.carbs,
-    fat: input.fat,
+    calories,
+    protein,
+    carbs,
+    fat,
   };
   emit({ ...state, foods: [entry, ...state.foods] });
 }
