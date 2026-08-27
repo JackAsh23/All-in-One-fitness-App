@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Check, Dumbbell, PersonStanding, Salad } from "lucide-react";
 import type { DaySummary, Priorities } from "../lib/types";
 import { mealHeatLevel, runHeatLevel, workoutHeatLevel } from "../lib/scoring";
@@ -52,18 +53,71 @@ const PILLARS: {
   },
 ];
 
+function RingArc({
+  cx,
+  cy,
+  r,
+  stroke,
+  color,
+  pct,
+  animate,
+}: {
+  cx: number;
+  cy: number;
+  r: number;
+  stroke: number;
+  color: string;
+  pct: number;
+  animate: boolean;
+}) {
+  const c = 2 * Math.PI * r;
+  const [fill, setFill] = useState(animate ? 0 : pct);
+
+  useEffect(() => {
+    if (!animate) {
+      setFill(pct);
+      return;
+    }
+    setFill(0);
+    const id = window.setTimeout(() => setFill(pct), 50);
+    return () => window.clearTimeout(id);
+  }, [animate, pct]);
+
+  return (
+    <g transform={`rotate(-90 ${cx} ${cy})`}>
+      <circle cx={cx} cy={cy} r={r} fill="none" stroke="#243040" strokeWidth={stroke} />
+      {pct > 0 || animate ? (
+        <circle
+          cx={cx}
+          cy={cy}
+          r={r}
+          fill="none"
+          stroke={color}
+          strokeWidth={stroke}
+          strokeLinecap="round"
+          strokeDasharray={c}
+          strokeDashoffset={c * (1 - fill)}
+          className={animate ? "consistency-ring-fill" : undefined}
+        />
+      ) : null}
+    </g>
+  );
+}
+
 export function ConsistencyBoard({
   days,
   selected,
   stepGoal,
   priorities,
   compact = false,
+  animatePillar = null,
 }: {
   days: DaySummary[];
   selected: DaySummary;
   stepGoal: number;
   priorities: Priorities;
   compact?: boolean;
+  animatePillar?: PillarKey | null;
 }) {
   const pillars = PILLARS.filter((pillar) => pillar.enabled(priorities) && selected.partsMax[pillar.key] > 0);
   const size = compact ? 168 : 196;
@@ -78,27 +132,20 @@ export function ConsistencyBoard({
         <div className="relative shrink-0" style={{ width: size, height: size }}>
           <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden>
             {pillars.map((pillar, ring) => {
-              const r = radii[ring];
-              const c = 2 * Math.PI * r;
               const pct = selected.partsMax[pillar.key]
                 ? Math.min(1, selected.parts[pillar.key] / selected.partsMax[pillar.key])
                 : 0;
               return (
-                <g key={pillar.key} transform={`rotate(-90 ${cx} ${cy})`}>
-                  <circle cx={cx} cy={cy} r={r} fill="none" stroke="#243040" strokeWidth={stroke} />
-                  {pct > 0 ? (
-                    <circle
-                      cx={cx}
-                      cy={cy}
-                      r={r}
-                      fill="none"
-                      stroke={pillar.color}
-                      strokeWidth={stroke}
-                      strokeLinecap="round"
-                      strokeDasharray={`${c * pct} ${c}`}
-                    />
-                  ) : null}
-                </g>
+                <RingArc
+                  key={pillar.key}
+                  cx={cx}
+                  cy={cy}
+                  r={radii[ring]}
+                  stroke={stroke}
+                  color={pillar.color}
+                  pct={pct}
+                  animate={compact && animatePillar === pillar.key}
+                />
               );
             })}
           </svg>

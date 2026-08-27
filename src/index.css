@@ -194,6 +194,10 @@ textarea::placeholder {
   animation: pop-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
+.consistency-ring-fill {
+  transition: stroke-dashoffset 1.15s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
 .animate-page {
   animation: fade-in 0.28s ease both;
 }
@@ -249,8 +253,10 @@ textarea::placeholder {
   .sheet-panel.is-leaving,
   .toast-pop,
   .toast-pop.is-leaving,
-  .user-location-halo {
+  .user-location-halo,
+  .consistency-ring-fill {
     animation: none !important;
+    transition: none !important;
   }
 
   button:not(:disabled):not(.no-press):active,

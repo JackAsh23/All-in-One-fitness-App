@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { Flame, PersonStanding, Salad, Dumbbell, Footprints, BarChart3 } from "lucide-react";
 import { ConsistencyBoard } from "../components/ConsistencyBoard";
@@ -8,6 +8,7 @@ import { SyncBanner } from "../components/SyncBanner";
 import { addDays, formatDuration, formatLongDate, formatPace, formatTimeLabel, todayISO, weekdayIndex } from "../lib/dates";
 import { currentStreak, summarizeDay } from "../lib/scoring";
 import { stepsSourceLabel } from "../lib/steps";
+import { markTrainingFillPlayed, shouldPlayTrainingFill } from "../lib/ringFill";
 import { useAppState } from "../lib/store";
 import { resolvePlan } from "../lib/trainingPlans";
 
@@ -19,6 +20,20 @@ export function HomePage() {
   const weekDays = Array.from({ length: 7 }, (_, index) => summarizeDay(state, addDays(today, index - 6)));
   const plan = resolvePlan(state.trainingPlanId, state.customPlans);
   const todayLift = plan?.days.find((day) => day.weekday === weekdayIndex(today)) ?? null;
+  const trainingComplete = day.partsMax.training > 0 && day.parts.training >= day.partsMax.training;
+  const animateTrainingRef = useRef(false);
+  const reduceMotion =
+    typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const pendingTrainingFill =
+    typeof localStorage !== "undefined" && shouldPlayTrainingFill(today, trainingComplete, localStorage);
+  if (!animateTrainingRef.current && pendingTrainingFill && !reduceMotion) {
+    animateTrainingRef.current = true;
+  }
+  useEffect(() => {
+    if (!pendingTrainingFill && !animateTrainingRef.current) return;
+    if (typeof localStorage === "undefined") return;
+    markTrainingFillPlayed(today, localStorage);
+  }, [today, pendingTrainingFill]);
 
   const timeline = [
     ...state.runs
@@ -103,12 +118,8 @@ export function HomePage() {
       <SyncBanner />
 
       <Card className="bg-gradient-to-br from-card to-ink-2">
-        <div className="mb-4 flex items-start justify-between">
-          <div>
-            <p className="text-xs uppercase tracking-[0.18em] text-fog">Consistency board</p>
-            <p className="text-sm text-fog">Movement · Training · Nutrition · Activity</p>
-          </div>
-          <div className="inline-flex shrink-0 items-center justify-center gap-1.5 self-start whitespace-nowrap rounded-full bg-life/15 px-3 py-1.5 text-sm leading-none text-life">
+        <div className="mb-3 flex justify-end">
+          <div className="inline-flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-full bg-life/15 px-3 py-1.5 text-sm leading-none text-life">
             <Flame size={14} className="shrink-0" />
             <span>{streak} day streak</span>
           </div>
@@ -119,6 +130,7 @@ export function HomePage() {
           stepGoal={state.profile.stepGoal}
           priorities={state.profile.priorities}
           compact
+          animatePillar={animateTrainingRef.current ? "training" : null}
         />
         <Link to="/consistency" className="mt-3 inline-block text-xs text-life">
           Consistency OS · {streak} day streak →
