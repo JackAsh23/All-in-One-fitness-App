@@ -33,8 +33,8 @@ function locationIcon() {
   return L.divIcon({
     className: "user-location",
     html: `<div class="user-location-halo"></div><div class="user-location-dot"></div>`,
-    iconSize: [44, 44],
-    iconAnchor: [22, 22],
+    iconSize: [56, 56],
+    iconAnchor: [28, 28],
   });
 }
 

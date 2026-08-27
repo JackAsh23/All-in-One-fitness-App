@@ -424,7 +424,7 @@ export function RunPage() {
               />
             </div>
           </div>
-          <div className="flex-1 rounded-t-3xl border-t border-line bg-ink px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-5">
+          <div className="flex-1 rounded-t-3xl border-t border-line bg-ink px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-8">
             <p className="text-sm font-semibold uppercase tracking-[0.12em] text-snow">
               Tap the map to drop pins
             </p>

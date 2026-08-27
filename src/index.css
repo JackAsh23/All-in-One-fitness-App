@@ -293,13 +293,13 @@ textarea::placeholder {
   left: 50%;
   top: 50%;
   z-index: 1;
-  width: 16px;
-  height: 16px;
-  margin: -8px 0 0 -8px;
+  width: 18px;
+  height: 18px;
+  margin: -9px 0 0 -9px;
   border-radius: 999px;
   background: #2a93ee;
   border: 3px solid #f4f7fa;
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.45), 0 2px 8px rgba(0, 0, 0, 0.45);
 }
 
 .user-location-halo {
