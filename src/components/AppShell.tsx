@@ -38,7 +38,7 @@ export function AppShell() {
           <NavLink
             to="/profile"
             className={`tap-scale grid size-10 place-items-center rounded-full border transition-colors ${
-              isProfile ? "border-life bg-life/15 text-life" : "border-line bg-card text-fog"
+              isProfile ? "border-life bg-life/15 text-life" : "border-line bg-card text-snow"
             }`}
             aria-label="Profile"
           >
@@ -74,7 +74,7 @@ export function AppShell() {
                 end={tab.end}
                 className={({ isActive }) =>
                   `tap-scale flex flex-col items-center gap-1 rounded-2xl py-1.5 text-[10px] transition-colors ${
-                    isActive ? "bg-life/10 text-life" : "text-fog"
+                    isActive ? "bg-life/10 text-life" : "text-snow/70"
                   }`
                 }
               >

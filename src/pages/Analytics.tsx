@@ -118,7 +118,7 @@ export function AnalyticsPage() {
           <p className="text-xs uppercase tracking-[0.18em] text-life">Phase 5</p>
           <h2 className="text-2xl font-semibold">Analytics</h2>
         </div>
-        <Link to="/consistency" className="text-sm text-fog">
+        <Link to="/consistency" className="text-sm font-medium text-snow">
           Heatmaps
         </Link>
       </div>

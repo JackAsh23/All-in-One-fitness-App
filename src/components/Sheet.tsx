@@ -88,7 +88,7 @@ export function Sheet({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full bg-card p-2 text-fog hover:text-snow"
+            className="rounded-full bg-card p-2 text-snow"
             aria-label="Close"
           >
             <X size={16} />

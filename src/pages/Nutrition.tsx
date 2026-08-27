@@ -9,7 +9,7 @@ import { MonthCalendar } from "../components/MonthCalendar";
 import { PortionStepper } from "../components/PortionStepper";
 import { Sheet } from "../components/Sheet";
 import { resolveBarcode } from "../lib/barcodes";
-import { foodCategories, buildRecentList, getFoodById, defaultMealType } from "../lib/nutrition";
+import { foodCategories, buildRecentList, getFoodById, defaultMealType, caloriesFromMacros, parseQuickAdd } from "../lib/nutrition";
 import { FOODS, macrosForGrams, searchFoods } from "../lib/foods";
 import { weightStats } from "../lib/analytics";
 import {
@@ -55,10 +55,10 @@ export function NutritionPage() {
   const [scanOpen, setScanOpen] = useState(false);
   const [selectedId, setSelectedId] = useState(FOODS[0]?.id);
   const [quickName, setQuickName] = useState("");
-  const [quickCal, setQuickCal] = useState("250");
-  const [quickP, setQuickP] = useState("20");
-  const [quickC, setQuickC] = useState("25");
-  const [quickF, setQuickF] = useState("8");
+  const [quickCal, setQuickCal] = useState("");
+  const [quickP, setQuickP] = useState("");
+  const [quickC, setQuickC] = useState("");
+  const [quickF, setQuickF] = useState("");
   const [weightInput, setWeightInput] = useState(String(state.profile.currentWeightKg ?? 76));
   const [targetInput, setTargetInput] = useState(String(state.profile.targetWeightKg ?? 74));
 
@@ -94,10 +94,17 @@ export function NutritionPage() {
     return searchFoods(query).filter((food) => !category || food.category === category);
   }, [query, category]);
 
-  const selected = getFoodById(selectedId ?? "") ?? results[0];
+  const selected = results.find((food) => food.id === selectedId) ?? results[0];
   const preview = selected ? macrosForGrams(selected, grams) : null;
   const recent = buildRecentList(state.recentFoods);
   const favorites = state.favoriteFoodIds.map(getFoodById).filter(Boolean);
+  const quickParsed = parseQuickAdd({
+    name: quickName,
+    calories: quickCal,
+    protein: quickP,
+    carbs: quickC,
+    fat: quickF,
+  });
 
   function openFood(id: string, defaultGrams = 150) {
     setSelectedId(id);
@@ -110,6 +117,25 @@ export function NutritionPage() {
     logFoodItem({ foodId: selected.id, grams, meal, date: viewDate });
     setChooser("closed");
     showToast(`${selected.name} logged`);
+  }
+
+  function syncCaloriesFromMacros(protein: string, carbs: string, fat: string) {
+    const p = parseDecimal(protein) ?? 0;
+    const c = parseDecimal(carbs) ?? 0;
+    const f = parseDecimal(fat) ?? 0;
+    if (protein.trim() === "" && carbs.trim() === "" && fat.trim() === "") {
+      setQuickCal("");
+      return;
+    }
+    setQuickCal(String(caloriesFromMacros(Math.max(0, p), Math.max(0, c), Math.max(0, f))));
+  }
+
+  function resetQuickForm() {
+    setQuickName("");
+    setQuickCal("");
+    setQuickP("");
+    setQuickC("");
+    setQuickF("");
   }
 
   async function handleBarcode(code: string) {
@@ -130,17 +156,19 @@ export function NutritionPage() {
   }
 
   function saveQuick() {
+    if (!quickParsed) return;
     logQuickFood({
-      name: quickName,
+      name: quickParsed.name,
       meal,
-      calories: Number(quickCal) || 0,
-      protein: Number(quickP) || 0,
-      carbs: Number(quickC) || 0,
-      fat: Number(quickF) || 0,
+      calories: quickParsed.calories,
+      protein: quickParsed.protein,
+      carbs: quickParsed.carbs,
+      fat: quickParsed.fat,
       date: viewDate,
     });
+    resetQuickForm();
     setChooser("closed");
-    showToast(`${quickName.trim() || "Food"} logged`);
+    showToast(`${quickParsed.name} logged`);
   }
 
   return (
@@ -240,7 +268,10 @@ export function NutritionPage() {
           <button
             type="button"
             className="rounded-2xl bg-card py-2 text-sm"
-            onClick={() => updateProfile({ targetWeightKg: Number(targetInput) || undefined })}
+            onClick={() => {
+              const kg = parseDecimal(targetInput);
+              if (kg != null && kg > 0) updateProfile({ targetWeightKg: kg });
+            }}
           >
             Save target
           </button>
@@ -274,7 +305,7 @@ export function NutritionPage() {
                       </p>
                     </span>
                   </button>
-                  <button type="button" className="text-xs text-fog" onClick={() => removeSavedMeal(saved.id)}>
+                  <button type="button" className="text-xs font-medium text-snow" onClick={() => removeSavedMeal(saved.id)}>
                     ✕
                   </button>
                 </div>
@@ -369,7 +400,7 @@ export function NutritionPage() {
                         </div>
                         <button
                           type="button"
-                          className="shrink-0 text-xs text-fog"
+                          className="shrink-0 text-xs font-medium text-snow"
                           onClick={() => {
                             removeFood(food.id);
                             showToast("Food removed", {
@@ -391,8 +422,9 @@ export function NutritionPage() {
                   <button
                     type="button"
                     onClick={() => {
-                      saveMealFromToday(section.id, `${section.label} plate`, section.emoji);
-                      showToast(`${section.label} meal saved`);
+                      const saved = saveMealFromToday(section.id, `${section.label} plate`, section.emoji);
+                      if (saved) showToast(`${section.label} meal saved`);
+                      else showToast("Add a searched food first — quick adds can’t be templates");
                     }}
                     className="mt-3 text-sm text-eat"
                   >
@@ -477,7 +509,7 @@ export function NutritionPage() {
               <div
                 key={food.id}
                 className={`flex items-center gap-2 rounded-2xl px-2 py-1 ${
-                  selectedId === food.id ? "bg-life/15" : "bg-card"
+                  selected?.id === food.id ? "bg-life/15" : "bg-card"
                 }`}
               >
                 <button type="button" className="flex-1 py-2 text-left" onClick={() => setSelectedId(food.id)}>
@@ -510,13 +542,20 @@ export function NutritionPage() {
             ) : null}
           </>
         ) : null}
-        <button type="button" onClick={saveSearch} className="mt-4 w-full rounded-2xl bg-eat py-3 font-semibold text-ink">
+        <button
+          type="button"
+          onClick={saveSearch}
+          disabled={!selected}
+          className="mt-4 w-full rounded-2xl bg-eat py-3 font-semibold text-ink disabled:opacity-40"
+        >
           Add to {meal}
         </button>
       </Sheet>
 
       <Sheet open={chooser === "quick"} title="Quick add" onClose={() => setChooser("closed")}>
-        <p className="mb-3 text-sm text-fog">MyFitnessPal-style: calories and macros only. No food database needed.</p>
+        <p className="mb-3 text-sm text-fog">
+          Calories update from protein, carbs, and fat. Every macro is required.
+        </p>
         <div className="mb-3 flex gap-2 overflow-x-auto no-scrollbar">
           {MEALS.map((section) => (
             <button
@@ -541,12 +580,43 @@ export function NutritionPage() {
           />
         </label>
         <div className="grid grid-cols-2 gap-3">
+          <QuickField
+            label="Protein (g)"
+            value={quickP}
+            onChange={(value) => {
+              setQuickP(value);
+              syncCaloriesFromMacros(value, quickC, quickF);
+            }}
+          />
+          <QuickField
+            label="Carbs (g)"
+            value={quickC}
+            onChange={(value) => {
+              setQuickC(value);
+              syncCaloriesFromMacros(quickP, value, quickF);
+            }}
+          />
+          <QuickField
+            label="Fat (g)"
+            value={quickF}
+            onChange={(value) => {
+              setQuickF(value);
+              syncCaloriesFromMacros(quickP, quickC, value);
+            }}
+          />
           <QuickField label="Calories" value={quickCal} onChange={setQuickCal} />
-          <QuickField label="Protein (g)" value={quickP} onChange={setQuickP} />
-          <QuickField label="Carbs (g)" value={quickC} onChange={setQuickC} />
-          <QuickField label="Fat (g)" value={quickF} onChange={setQuickF} />
         </div>
-        <button type="button" onClick={saveQuick} className="mt-4 w-full rounded-2xl bg-eat py-3 font-semibold text-ink">
+        <p className="mt-2 text-xs text-fog">
+          {quickParsed
+            ? "Ready to log."
+            : "Fill name, protein, carbs, and fat — 0 is fine, blank is not."}
+        </p>
+        <button
+          type="button"
+          onClick={saveQuick}
+          disabled={!quickParsed}
+          className="mt-4 w-full rounded-2xl bg-eat py-3 font-semibold text-ink disabled:opacity-40"
+        >
           Log macros
         </button>
       </Sheet>

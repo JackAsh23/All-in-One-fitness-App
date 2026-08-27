@@ -479,7 +479,7 @@ export function WorkoutPage() {
             <button
               type="button"
               onClick={() => setPlanOpen((open) => !open)}
-              className="flex shrink-0 items-center gap-1 rounded-full bg-ink px-3 py-1.5 text-sm text-fog"
+              className="flex shrink-0 items-center gap-1 rounded-full bg-ink px-3 py-1.5 text-sm text-snow"
             >
               {planOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
               {planOpen ? "Hide" : "Show"}
@@ -505,7 +505,7 @@ export function WorkoutPage() {
                   key={item.id}
                   type="button"
                   onClick={() => setTrainingPlan(item.id)}
-                  className="rounded-full bg-ink px-3 py-1.5 text-sm text-fog"
+                  className="rounded-full bg-ink px-3 py-1.5 text-sm text-snow"
                 >
                   {item.name}
                 </button>
@@ -557,7 +557,7 @@ export function WorkoutPage() {
               <button
                 type="button"
                 onClick={() => setTrainingPlan(undefined)}
-                className="shrink-0 rounded-full px-3 py-1.5 text-sm text-fog"
+                className="shrink-0 rounded-full px-3 py-1.5 text-sm text-snow"
               >
                 Clear
               </button>
@@ -653,7 +653,7 @@ export function WorkoutPage() {
                     <p className="text-xs text-fog">{formatShortDate(workout.date)}</p>
                     <button
                       type="button"
-                      className="text-xs text-fog"
+                      className="text-xs font-medium text-snow"
                       onClick={() => {
                         removeWorkout(workout.id);
                         showToast("Workout deleted", {

@@ -29,7 +29,7 @@ export function MonthCalendar({ selected, marked, onSelect, accent = "bg-life te
       <div className="mb-3 flex items-center justify-between">
         <button
           type="button"
-          className="rounded-full bg-ink px-3 py-1 text-sm text-fog"
+          className="rounded-full bg-ink px-3 py-1 text-sm text-snow"
           onClick={() => setCursor(addDays(monthStart, -1).slice(0, 7))}
         >
           ‹
@@ -37,7 +37,7 @@ export function MonthCalendar({ selected, marked, onSelect, accent = "bg-life te
         <p className="text-sm font-medium">{formatMonthYear(labelDate)}</p>
         <button
           type="button"
-          className="rounded-full bg-ink px-3 py-1 text-sm text-fog"
+          className="rounded-full bg-ink px-3 py-1 text-sm text-snow"
           onClick={() => setCursor(nextMonth)}
         >
           ›
