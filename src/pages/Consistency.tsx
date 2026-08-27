@@ -58,7 +58,7 @@ export function ConsistencyPage() {
   ].filter((p) => p.enabled && p.max > 0);
 
   return (
-    <div className="space-y-4 animate-pop">
+    <div className="space-y-4">
       <div className="flex items-end justify-between">
         <div>
           <p className="text-xs uppercase tracking-[0.18em] text-life">Phase 6</p>

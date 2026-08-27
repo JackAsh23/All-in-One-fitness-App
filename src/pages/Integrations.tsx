@@ -69,7 +69,7 @@ export function IntegrationsPage() {
   }
 
   return (
-    <div className="space-y-4 animate-pop">
+    <div className="space-y-4">
       <div>
         <p className="text-xs uppercase tracking-[0.18em] text-step">Connections</p>
         <h2 className="text-2xl font-semibold">Integrations</h2>

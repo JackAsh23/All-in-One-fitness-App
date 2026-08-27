@@ -24,7 +24,7 @@ export function ExerciseGalleryPage() {
   const visible = hits.slice(0, shown);
 
   return (
-    <div className="w-full min-w-0 space-y-4 animate-pop">
+    <div className="w-full min-w-0 space-y-4">
       <h2 className="text-2xl font-semibold">Exercise Gallery</h2>
 
       <input

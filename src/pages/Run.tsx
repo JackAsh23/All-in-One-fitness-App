@@ -12,6 +12,7 @@ import { newDraftRoute, presetRoutes } from "../lib/routes";
 import { summarizeDay } from "../lib/scoring";
 import { addRun, removeRoute, saveRoute, useAppState } from "../lib/store";
 import { appendRoutedPoint } from "../lib/osrm";
+import { showToast } from "../lib/toast";
 import type { GeoPoint, RoutePlan, SportKind } from "../lib/types";
 
 type Phase = "home" | "gps" | "plan" | "live";
@@ -129,6 +130,7 @@ export function RunPage() {
       path,
     });
     stopLive();
+    showToast(kind === "walk" ? "Walk saved" : "Run saved");
   }
 
   function stopLive() {
@@ -154,6 +156,7 @@ export function RunPage() {
       kind: logKind,
     });
     setLogOpen(false);
+    showToast(logKind === "walk" ? "Walk logged" : "Run logged");
   }
 
   async function addPlanPoint(point: GeoPoint) {
@@ -197,12 +200,13 @@ export function RunPage() {
     setSelectedRoute(named);
     setDraft(null);
     setPhase("home");
+    showToast("Route saved");
   }
 
   if (phase === "live") {
     const accent = kind === "walk" ? "bg-step" : "bg-run";
     return (
-      <div className="fixed inset-0 z-50 bg-ink">
+      <div className="fixed inset-0 z-50 bg-ink animate-pop">
         <div className="mx-auto flex h-dvh max-w-[430px] flex-col">
           <div className="relative h-[58%]">
             <ActivityMap
@@ -249,7 +253,7 @@ export function RunPage() {
 
   if (phase === "plan") {
     return (
-      <div className="fixed inset-0 z-50 bg-ink">
+      <div className="fixed inset-0 z-50 bg-ink animate-pop">
         <div className="mx-auto flex h-dvh max-w-[430px] flex-col">
           <div className="relative h-[62%]">
             <ActivityMap
@@ -349,7 +353,7 @@ export function RunPage() {
   }
 
   return (
-    <div className="space-y-4 animate-pop">
+    <div className="space-y-4">
       <div className="flex items-end justify-between">
         <h2 className="text-2xl font-semibold">Run</h2>
         <Link to="/integrations" className="text-sm text-step">

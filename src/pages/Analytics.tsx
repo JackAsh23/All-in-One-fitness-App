@@ -26,6 +26,7 @@ import { bmiCategory, bodyMassIndex } from "../lib/bmi";
 import { todayISO } from "../lib/dates";
 import { finitePositive, parseDecimal, parseHeightCm } from "../lib/numbers";
 import { logWeight, updateProfile, useAppState } from "../lib/store";
+import { showToast } from "../lib/toast";
 
 type Tab = "run" | "walk" | "lift" | "eat" | "weight" | "steps";
 
@@ -101,12 +102,15 @@ export function AnalyticsPage() {
 
   function persistWeighIn() {
     const kg = parseDecimal(weighIn);
-    if (kg != null && kg > 0) logWeight(weighDate, kg);
+    if (kg != null && kg > 0) {
+      logWeight(weighDate, kg);
+      showToast("Weight logged");
+    }
     persistHeight(heightCm);
   }
 
   return (
-    <div className="space-y-4 animate-pop">
+    <div className="space-y-4">
       <div className="flex items-end justify-between">
         <div>
           <p className="text-xs uppercase tracking-[0.18em] text-life">Phase 5</p>

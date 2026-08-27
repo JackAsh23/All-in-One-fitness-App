@@ -44,7 +44,7 @@ export function HomePage() {
   ].sort((a, b) => a.time.localeCompare(b.time));
 
   return (
-    <div className="space-y-4 animate-pop">
+    <div className="space-y-4">
       <div>
         <p className="text-fog text-sm">{formatLongDate(today)}</p>
         <h2 className="text-2xl font-semibold tracking-tight">
@@ -56,21 +56,21 @@ export function HomePage() {
       <div className="grid grid-cols-3 gap-2">
         <Link
           to="/run?start=1"
-          className="rounded-3xl bg-run/15 px-2 py-3 text-center"
+          className="tap-scale rounded-3xl bg-run/15 px-2 py-3 text-center"
         >
           <PersonStanding className="mx-auto text-run" size={22} />
           <p className="mt-1 text-xs font-semibold text-run">Start run</p>
         </Link>
         <Link
           to="/nutrition?log=1"
-          className="rounded-3xl bg-eat/15 px-2 py-3 text-center"
+          className="tap-scale rounded-3xl bg-eat/15 px-2 py-3 text-center"
         >
           <Salad className="mx-auto text-eat" size={22} />
           <p className="mt-1 text-xs font-semibold text-eat">Log food</p>
         </Link>
         <Link
           to="/workout"
-          className="rounded-3xl bg-lift/15 px-2 py-3 text-center"
+          className="tap-scale rounded-3xl bg-lift/15 px-2 py-3 text-center"
         >
           <Dumbbell className="mx-auto text-lift" size={22} />
           <p className="mt-1 text-xs font-semibold text-lift">Lift</p>

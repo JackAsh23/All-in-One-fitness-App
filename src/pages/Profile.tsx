@@ -6,6 +6,7 @@ import { defaultPriorities } from "../lib/scoring";
 import { hardRefreshApp } from "../lib/appRefresh";
 import { downloadBackup, importBackup, resetDemo, startFresh, setGoalMode, updateProfile, useAppState } from "../lib/store";
 import { APP_VERSION } from "../lib/version";
+import { showToast } from "../lib/toast";
 import type { Priorities } from "../lib/types";
 
 export function ProfilePage() {
@@ -37,11 +38,12 @@ export function ProfilePage() {
       priorities,
     });
     setSaved(true);
+    showToast("Profile saved");
     window.setTimeout(() => setSaved(false), 1600);
   }
 
   return (
-    <div className="space-y-4 animate-pop">
+    <div className="space-y-4">
       <h2 className="text-2xl font-semibold">Profile</h2>
       <Link
         to="/integrations"

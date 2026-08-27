@@ -39,7 +39,7 @@ export function Heatmap({ weeks, selected, onSelect, palette = "life" }: Heatmap
                 type="button"
                 title={cell.date}
                 onClick={() => onSelect?.(cell.date)}
-                className={`size-[11px] rounded-[2px] ${levels[cell.level]} ${
+                className={`no-press size-[11px] rounded-[2px] ${levels[cell.level]} ${
                   selected === cell.date ? "ring-1 ring-snow" : ""
                 }`}
               />

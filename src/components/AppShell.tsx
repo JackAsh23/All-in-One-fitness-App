@@ -1,6 +1,7 @@
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { BarChart3, Dumbbell, Flame, Home, Plus, Salad, UserRound, PersonStanding } from "lucide-react";
 import { BackButton } from "./BackButton";
+import { ToastHost } from "./ToastHost";
 
 const TABS = [
   { to: "/", label: "Home", icon: Home, end: true },
@@ -36,7 +37,7 @@ export function AppShell() {
           </div>
           <NavLink
             to="/profile"
-            className={`grid size-10 place-items-center rounded-full border ${
+            className={`tap-scale grid size-10 place-items-center rounded-full border transition-colors ${
               isProfile ? "border-life bg-life/15 text-life" : "border-line bg-card text-fog"
             }`}
             aria-label="Profile"
@@ -45,8 +46,11 @@ export function AppShell() {
           </NavLink>
         </header>
         <main className="relative min-w-0 flex-1 overflow-x-hidden overflow-y-auto px-4 pb-28">
-          <Outlet />
+          <div key={path} className="animate-pop">
+            <Outlet />
+          </div>
         </main>
+        <ToastHost />
         {path === "/nutrition" ? (
           <button
             type="button"
@@ -69,8 +73,8 @@ export function AppShell() {
                 to={tab.to}
                 end={tab.end}
                 className={({ isActive }) =>
-                  `flex flex-col items-center gap-1 rounded-2xl py-1.5 text-[10px] ${
-                    isActive ? "text-life" : "text-fog"
+                  `tap-scale flex flex-col items-center gap-1 rounded-2xl py-1.5 text-[10px] transition-colors ${
+                    isActive ? "bg-life/10 text-life" : "text-fog"
                   }`
                 }
               >

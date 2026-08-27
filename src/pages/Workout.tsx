@@ -11,6 +11,7 @@ import { formatShortDate, nowTime, todayISO, uid, weekdayIndex } from "../lib/da
 import { addWorkout, removeCustomPlan, saveCustomPlan, setTrainingPlan, updateProfile, useAppState } from "../lib/store";
 import { TRAINING_PLANS, resolvePlan, type PlanDay, type TrainingPlan } from "../lib/trainingPlans";
 import { formatWorkoutSet, isTimedExercise, parseTimedTarget, sessionHasLoggedSets } from "../lib/exerciseTiming";
+import { showToast } from "../lib/toast";
 import { CustomPlanSheet } from "../components/CustomPlanSheet";
 import type { WorkoutExercise } from "../lib/types";
 
@@ -201,6 +202,7 @@ export function WorkoutPage() {
     setSession(null);
     setRest(0);
     setHoldRunning(false);
+    showToast("Workout saved");
   }
 
   const monthWorkouts = state.workouts.filter((workout) => workout.date.startsWith(todayISO().slice(0, 7))).length;
@@ -447,7 +449,7 @@ export function WorkoutPage() {
   }
 
   return (
-    <div className="space-y-4 animate-pop">
+    <div className="space-y-4">
       <div className="flex items-end justify-between">
         <h2 className="text-2xl font-semibold">Workout</h2>
         <div className="flex items-center gap-3">
@@ -663,7 +665,10 @@ export function WorkoutPage() {
       <CustomPlanSheet
         open={planBuilderOpen}
         onClose={() => setPlanBuilderOpen(false)}
-        onSave={saveCustomPlan}
+        onSave={(plan) => {
+          saveCustomPlan(plan);
+          showToast("Plan saved");
+        }}
       />
     </div>
   );

@@ -27,6 +27,7 @@ import {
 } from "../lib/store";
 import { todayISO } from "../lib/dates";
 import { parseDecimal } from "../lib/numbers";
+import { showToast } from "../lib/toast";
 import type { MealType } from "../lib/types";
 
 const MEALS: { id: MealType; label: string; emoji: string }[] = [
@@ -107,6 +108,7 @@ export function NutritionPage() {
     if (!selected) return;
     logFoodItem({ foodId: selected.id, grams, meal, date: viewDate });
     setChooser("closed");
+    showToast(`${selected.name} logged`);
   }
 
   async function handleBarcode(code: string) {
@@ -137,10 +139,11 @@ export function NutritionPage() {
       date: viewDate,
     });
     setChooser("closed");
+    showToast(`${quickName.trim() || "Food"} logged`);
   }
 
   return (
-    <div className="space-y-4 animate-pop pb-8">
+    <div className="space-y-4 pb-8">
       <div className="flex items-end justify-between">
         <div>
           <p className="text-xs uppercase tracking-[0.18em] text-eat">Fuel</p>
@@ -225,7 +228,10 @@ export function NutritionPage() {
             className="rounded-2xl bg-eat py-2 text-sm font-semibold text-ink"
             onClick={() => {
               const kg = parseDecimal(weightInput);
-              if (kg != null && kg > 0) logWeight(viewDate, kg);
+              if (kg != null && kg > 0) {
+                logWeight(viewDate, kg);
+                showToast("Weight logged");
+              }
             }}
           >
             Save weigh-in
@@ -253,7 +259,10 @@ export function NutritionPage() {
                 <div key={saved.id} className="flex items-center gap-2 rounded-2xl bg-ink px-3 py-2">
                   <button
                     type="button"
-                    onClick={() => logSavedMeal(saved.id, meal, viewDate)}
+                    onClick={() => {
+                      logSavedMeal(saved.id, meal, viewDate);
+                      showToast(`${saved.name} logged`);
+                    }}
                     className="flex flex-1 items-center gap-2 text-left"
                   >
                     <span>{saved.emoji}</span>
@@ -285,7 +294,10 @@ export function NutritionPage() {
                 <button
                   key={entry.foodId}
                   type="button"
-                  onClick={() => logFoodItem({ foodId: entry.foodId, grams: entry.grams, meal, date: viewDate })}
+                  onClick={() => {
+                    logFoodItem({ foodId: entry.foodId, grams: entry.grams, meal, date: viewDate });
+                    showToast(`${food.name.split(",")[0]} logged`);
+                  }}
                   className="shrink-0 rounded-2xl bg-ink px-3 py-2 text-left"
                 >
                   <p className="text-sm font-medium">{food.name.split(",")[0]}</p>
@@ -367,7 +379,10 @@ export function NutritionPage() {
                 {isToday ? (
                   <button
                     type="button"
-                    onClick={() => saveMealFromToday(section.id, `${section.label} plate`, section.emoji)}
+                    onClick={() => {
+                      saveMealFromToday(section.id, `${section.label} plate`, section.emoji);
+                      showToast(`${section.label} meal saved`);
+                    }}
                     className="mt-3 text-sm text-eat"
                   >
                     Save {section.label.toLowerCase()} as meal template
@@ -538,6 +553,7 @@ export function NutritionPage() {
           for (const item of scanned.items) {
             logFoodItem({ foodId: item.foodId, grams: item.grams, meal, date: viewDate });
           }
+          showToast(`${scanned.name} logged`);
         }}
       />
 
