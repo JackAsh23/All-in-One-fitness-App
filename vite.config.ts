@@ -61,7 +61,7 @@ if (!isCapacitor) {
     VitePWA({
       registerType: "autoUpdate",
       injectRegister: null,
-      includeAssets: ["favicon.svg", "apple-touch-icon.png", "pwa-192.png", "pwa-512.png", "logo.png"],
+      includeAssets: ["favicon.svg", "icon-166.png", "apple-touch-icon.png", "pwa-192.png", "pwa-512.png", "logo.png"],
       manifest: {
         name: "One Life — Fitness OS",
         short_name: "One Life",
@@ -74,14 +74,14 @@ if (!isCapacitor) {
           ? { id: pagesStartUrl, start_url: pagesStartUrl, scope: pagesStartUrl }
           : { start_url: "/", scope: "/" }),
         icons: [
+          { src: "icon-166.png", sizes: "180x180", type: "image/png" },
           { src: "pwa-192.png", sizes: "192x192", type: "image/png" },
           { src: "pwa-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
           { src: "pwa-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
-          { src: "favicon.svg", sizes: "any", type: "image/svg+xml", purpose: "any" },
         ],
       },
       workbox: {
-        cacheId: "one-life-1.6.5",
+        cacheId: "one-life-1.6.6",
         skipWaiting: true,
         clientsClaim: true,
         navigateFallback: isGithubPages ? `${GITHUB_PAGES_BASE}index.html` : "/index.html",

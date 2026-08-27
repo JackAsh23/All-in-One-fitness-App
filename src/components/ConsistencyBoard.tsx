@@ -102,14 +102,6 @@ export function ConsistencyBoard({
               );
             })}
           </svg>
-          <div className="absolute inset-0 grid place-items-center">
-            <div className="text-center">
-              <p className={`font-mono font-semibold leading-none text-life ${compact ? "text-3xl" : "text-4xl"}`}>
-                {selected.score}
-              </p>
-              <p className="mt-1 text-[10px] uppercase tracking-[0.16em] text-fog">Score</p>
-            </div>
-          </div>
         </div>
         <ul className="min-w-0 flex-1 space-y-2.5">
           {pillars.map((pillar) => (

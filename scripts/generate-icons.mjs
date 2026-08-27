@@ -10,6 +10,7 @@ for (const [name, size] of [
   ["pwa-192.png", 192],
   ["pwa-512.png", 512],
   ["apple-touch-icon.png", 180],
+  ["icon-166.png", 180],
 ]) {
   await sharp(logoPng)
     .flatten({ background: "#07090c" })

@@ -101,6 +101,7 @@ export function ProfilePage() {
             Get latest app version (v{APP_VERSION})
           </button>
           <p className="text-center text-xs text-fog">Saved runs, food, and lifts stay on this phone. You do not need Start fresh after an update.</p>
+          <p className="text-center text-xs text-fog">iPhone keeps the old home-screen icon until you delete it and Add to Home Screen again.</p>
         </div>
       </Card>
       <Card>

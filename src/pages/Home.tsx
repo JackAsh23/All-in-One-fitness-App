@@ -108,9 +108,9 @@ export function HomePage() {
             <p className="text-xs uppercase tracking-[0.18em] text-fog">Consistency board</p>
             <p className="text-sm text-fog">Movement · Training · Nutrition · Activity</p>
           </div>
-          <div className="rounded-full bg-life/15 px-3 py-1 text-sm text-life">
-            <Flame className="mr-1 inline" size={14} />
-            {streak} day streak
+          <div className="inline-flex shrink-0 items-center justify-center gap-1.5 self-start whitespace-nowrap rounded-full bg-life/15 px-3 py-1.5 text-sm leading-none text-life">
+            <Flame size={14} className="shrink-0" />
+            <span>{streak} day streak</span>
           </div>
         </div>
         <ConsistencyBoard
