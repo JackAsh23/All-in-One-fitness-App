@@ -159,7 +159,7 @@ export function HomePage() {
             Heatmap
           </Link>
         </div>
-        {timeline.length === 0 ? (
+        {timeline.length === 0 && day.steps <= 0 ? (
           <p className="text-sm text-fog">Nothing logged yet. A run, a session, or lunch is enough to light the day.</p>
         ) : (
           <ul className="space-y-3">

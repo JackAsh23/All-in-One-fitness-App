@@ -34,9 +34,9 @@ export function AppShell() {
             <img
               src={publicAsset("logo.png")}
               alt=""
-              width={36}
-              height={36}
-              className="size-9 shrink-0 rounded-xl object-contain"
+              width={40}
+              height={40}
+              className="size-10 shrink-0 rounded-xl bg-ink object-contain"
             />
             <div className="min-w-0">
               <p className="text-[11px] uppercase tracking-[0.22em] text-life">One Life</p>

@@ -18,7 +18,7 @@ const PILLARS: {
     key: "movement",
     label: "Movement",
     color: "#ff6b4a",
-    heat: ["#161b22", "#3d1a12", "#7a2e1c", "#c44a2a", "#ff6b4a"],
+    heat: ["#243040", "#3d1a12", "#7a2e1c", "#c44a2a", "#ff6b4a"],
     Icon: PersonStanding,
     enabled: (p) => p.running,
     level: (day) => runHeatLevel(day.runKm),
@@ -27,7 +27,7 @@ const PILLARS: {
     key: "training",
     label: "Training",
     color: "#7aa6ff",
-    heat: ["#161b22", "#152544", "#2c4a86", "#4e78d4", "#7aa6ff"],
+    heat: ["#243040", "#152544", "#2c4a86", "#4e78d4", "#7aa6ff"],
     Icon: Dumbbell,
     enabled: (p) => p.strength,
     level: (day) => workoutHeatLevel(day.workoutCount),
@@ -36,7 +36,7 @@ const PILLARS: {
     key: "nutrition",
     label: "Nutrition",
     color: "#ffc857",
-    heat: ["#161b22", "#3d3010", "#7a5f18", "#c49a2e", "#ffc857"],
+    heat: ["#243040", "#3d3010", "#7a5f18", "#c49a2e", "#ffc857"],
     Icon: Salad,
     enabled: (p) => p.nutrition,
     level: (day) => mealHeatLevel(day.mealsLogged),
@@ -45,24 +45,12 @@ const PILLARS: {
     key: "activity",
     label: "Activity",
     color: "#5eead4",
-    heat: ["#161b22", "#134e4a", "#0f766e", "#2dd4bf", "#5eead4"],
+    heat: ["#243040", "#134e4a", "#0f766e", "#2dd4bf", "#5eead4"],
     Icon: Check,
     enabled: (p) => p.steps,
     level: (day, goal) => stepHeatLevel(day.steps, goal),
   },
 ];
-
-function polar(cx: number, cy: number, r: number, deg: number) {
-  const a = ((deg - 90) * Math.PI) / 180;
-  return { x: cx + r * Math.cos(a), y: cy + r * Math.sin(a) };
-}
-
-function arcPath(cx: number, cy: number, r: number, startDeg: number, endDeg: number) {
-  const start = polar(cx, cy, r, startDeg);
-  const end = polar(cx, cy, r, endDeg);
-  const large = endDeg - startDeg > 180 ? 1 : 0;
-  return `M ${start.x} ${start.y} A ${r} ${r} 0 ${large} 1 ${end.x} ${end.y}`;
-}
 
 export function ConsistencyBoard({
   days,
@@ -81,11 +69,8 @@ export function ConsistencyBoard({
   const size = compact ? 168 : 196;
   const cx = size / 2;
   const cy = size / 2;
-  const stroke = compact ? 11 : 13;
-  const gap = 5;
-  const radii = pillars.map((_, index) => size / 2 - stroke / 2 - 2 - index * (stroke + 5));
-  const n = Math.max(days.length, 1);
-  const slice = 360 / n;
+  const stroke = compact ? 12 : 14;
+  const radii = pillars.map((_, index) => size / 2 - stroke / 2 - 4 - index * (stroke + 4));
 
   return (
     <div className={compact ? "space-y-3" : "space-y-4"}>
@@ -94,35 +79,23 @@ export function ConsistencyBoard({
           <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden>
             {pillars.map((pillar, ring) => {
               const r = radii[ring];
-              const todayPct = selected.partsMax[pillar.key]
+              const c = 2 * Math.PI * r;
+              const pct = selected.partsMax[pillar.key]
                 ? Math.min(1, selected.parts[pillar.key] / selected.partsMax[pillar.key])
                 : 0;
               return (
-                <g key={pillar.key}>
-                  {days.map((day, i) => {
-                    const level = pillar.level(day, stepGoal);
-                    const start = -90 + i * slice + gap / 2;
-                    const end = -90 + (i + 1) * slice - gap / 2;
-                    const isToday = day.date === selected.date;
-                    return (
-                      <path
-                        key={`${pillar.key}-${day.date}`}
-                        d={arcPath(cx, cy, r, start, end)}
-                        fill="none"
-                        stroke={pillar.heat[level]}
-                        strokeWidth={isToday ? stroke + 1.5 : stroke}
-                        strokeLinecap="round"
-                        opacity={isToday ? 1 : 0.78}
-                      />
-                    );
-                  })}
-                  {todayPct > 0 ? (
-                    <path
-                      d={arcPath(cx, cy, r, -90, -90 + Math.max(8, todayPct * 360 - 2))}
+                <g key={pillar.key} transform={`rotate(-90 ${cx} ${cy})`}>
+                  <circle cx={cx} cy={cy} r={r} fill="none" stroke="#243040" strokeWidth={stroke} />
+                  {pct > 0 ? (
+                    <circle
+                      cx={cx}
+                      cy={cy}
+                      r={r}
                       fill="none"
                       stroke={pillar.color}
-                      strokeWidth={3}
+                      strokeWidth={stroke}
                       strokeLinecap="round"
+                      strokeDasharray={`${c * pct} ${c}`}
                     />
                   ) : null}
                 </g>
@@ -131,8 +104,10 @@ export function ConsistencyBoard({
           </svg>
           <div className="absolute inset-0 grid place-items-center">
             <div className="text-center">
-              <p className={`font-mono font-semibold text-life ${compact ? "text-3xl" : "text-4xl"}`}>{selected.score}</p>
-              <p className="text-[10px] uppercase tracking-[0.16em] text-fog">Score</p>
+              <p className={`font-mono font-semibold leading-none text-life ${compact ? "text-3xl" : "text-4xl"}`}>
+                {selected.score}
+              </p>
+              <p className="mt-1 text-[10px] uppercase tracking-[0.16em] text-fog">Score</p>
             </div>
           </div>
         </div>
@@ -155,11 +130,10 @@ export function ConsistencyBoard({
                     <span
                       key={`${pillar.key}-dot-${day.date}`}
                       title={day.date}
-                      className="h-2 flex-1 rounded-[2px]"
+                      className="h-2.5 flex-1 rounded-[3px]"
                       style={{
                         background: pillar.heat[level],
-                        outline: day.date === selected.date ? "1px solid #f4f7fa" : undefined,
-                        outlineOffset: 1,
+                        boxShadow: day.date === selected.date ? `0 0 0 1px ${pillar.color}` : undefined,
                       }}
                     />
                   );
@@ -171,7 +145,7 @@ export function ConsistencyBoard({
       </div>
       {compact ? null : (
         <p className="text-[11px] text-fog">
-          Outer to inner: Movement, Training, Nutrition, Activity. Squares are the last 7 days.
+          Rings are today’s fill. The squares are a 7-day heatmap — Movement, Training, Nutrition, Activity.
         </p>
       )}
     </div>
