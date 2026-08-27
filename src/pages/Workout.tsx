@@ -364,7 +364,7 @@ export function WorkoutPage() {
               </ul>
             )}
             {isTimedExercise(current.name, current.targetReps) ? (
-              <div className="space-y-5">
+              <div className="flex flex-col gap-6">
                 <div className="rounded-3xl bg-ink px-4 py-6 text-center">
                   <p className="text-xs uppercase tracking-[0.2em] text-lift">
                     {holdRunning ? "Hold" : "Ready"}
@@ -382,7 +382,7 @@ export function WorkoutPage() {
                     {holdRunning ? "Logs automatically at 0" : `Target ${holdTarget}s`}
                   </p>
                 </div>
-                <label className="text-sm text-fog">
+                <label className="block text-sm text-fog">
                   Target seconds
                   <input
                     value={holdSec}
@@ -392,8 +392,9 @@ export function WorkoutPage() {
                       const next = Math.max(1, Number(event.target.value) || 45);
                       if (!holdRunning) setHoldRemaining(next);
                     }}
-                    className="mt-1 w-full rounded-2xl border border-line bg-ink px-3 py-3 text-snow disabled:opacity-50"
+                    className="mt-1 w-full rounded-2xl border border-line bg-ink px-3 py-3 text-base text-snow disabled:opacity-50"
                     inputMode="numeric"
+                    data-testid="hold-seconds"
                   />
                 </label>
                 <div className="grid grid-cols-2 gap-2">
@@ -401,6 +402,7 @@ export function WorkoutPage() {
                     type="button"
                     className="rounded-2xl bg-lift py-3 font-semibold text-ink disabled:opacity-40"
                     disabled={holdRunning}
+                    data-testid="start-hold-timer"
                     onClick={() => {
                       if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
                       void unlockTimerSound();
@@ -439,7 +441,7 @@ export function WorkoutPage() {
                     <input
                       value={kg}
                       onChange={(event) => setKg(event.target.value)}
-                      className="mt-1 w-full rounded-2xl border border-line bg-ink px-3 py-3 text-snow"
+                      className="mt-1 w-full rounded-2xl border border-line bg-ink px-3 py-3 text-base text-snow"
                       inputMode="decimal"
                     />
                   </label>
@@ -448,12 +450,12 @@ export function WorkoutPage() {
                     <input
                       value={reps}
                       onChange={(event) => setReps(event.target.value)}
-                      className="mt-1 w-full rounded-2xl border border-line bg-ink px-3 py-3 text-snow"
+                      className="mt-1 w-full rounded-2xl border border-line bg-ink px-3 py-3 text-base text-snow"
                       inputMode="numeric"
                     />
                   </label>
                 </div>
-                <button type="button" onClick={logSet} className="mt-4 w-full rounded-2xl bg-lift py-3 font-semibold text-ink">
+                <button type="button" onClick={logSet} className="mt-5 w-full rounded-2xl bg-lift py-3 font-semibold text-ink">
                   Log set
                 </button>
               </>
