@@ -11,6 +11,7 @@ import { formatShortDate, nowTime, todayISO, uid, weekdayIndex } from "../lib/da
 import { addWorkout, removeCustomPlan, removeWorkout, saveCustomPlan, setTrainingPlan, updateProfile, useAppState } from "../lib/store";
 import { TRAINING_PLANS, resolvePlan, type PlanDay, type TrainingPlan } from "../lib/trainingPlans";
 import { formatWorkoutSet, isTimedExercise, parseTimedTarget, sessionHasLoggedSets } from "../lib/exerciseTiming";
+import { playTimerDone, unlockTimerSound } from "../lib/timerSound";
 import { showToast } from "../lib/toast";
 import { CustomPlanSheet } from "../components/CustomPlanSheet";
 import type { WorkoutExercise } from "../lib/types";
@@ -46,12 +47,29 @@ export function WorkoutPage() {
   const activeRef = useRef(activeExercise);
   activeRef.current = activeExercise;
   const holdLoggedRef = useRef(false);
+  const skippedRestRef = useRef(false);
+  const hadRestRef = useRef(false);
   const holdTarget = Math.max(1, Number(holdSec) || 45);
+  const restActive = rest > 0;
 
   useEffect(() => {
-    if (rest <= 0) return;
+    if (!restActive) return;
     const id = window.setInterval(() => setRest((value) => Math.max(0, value - 1)), 1000);
     return () => window.clearInterval(id);
+  }, [restActive]);
+
+  useEffect(() => {
+    if (rest > 0) {
+      hadRestRef.current = true;
+      return;
+    }
+    if (!hadRestRef.current) return;
+    hadRestRef.current = false;
+    if (skippedRestRef.current) {
+      skippedRestRef.current = false;
+      return;
+    }
+    playTimerDone();
   }, [rest]);
 
   useEffect(() => {
@@ -75,6 +93,7 @@ export function WorkoutPage() {
     }
     if (holdRemaining > 0 || holdLoggedRef.current) return;
     holdLoggedRef.current = true;
+    playTimerDone();
     logTimedSet(holdTarget);
   }, [holdRunning, holdRemaining, holdTarget]);
 
@@ -111,10 +130,22 @@ export function WorkoutPage() {
     }
   }
 
+  function clearRest() {
+    skippedRestRef.current = rest > 0;
+    setRest(0);
+  }
+
+  function startRest(seconds: number) {
+    void unlockTimerSound();
+    skippedRestRef.current = false;
+    setRest(seconds);
+  }
+
   function startExercises(template: string, exercises: WorkoutExercise[]) {
+    void unlockTimerSound();
     setSession({ template, started: Date.now(), exercises });
     setActiveExercise(0);
-    setRest(0);
+    clearRest();
     syncInputsFor(exercises[0]);
   }
 
@@ -149,7 +180,7 @@ export function WorkoutPage() {
     setSession(next);
     setHoldRunning(false);
     setHoldRemaining(holdTarget);
-    setRest(restSec);
+    startRest(restSec);
   }
 
   function logSet() {
@@ -167,7 +198,7 @@ export function WorkoutPage() {
       exercise.sets.push({ kg: Number(kg) || 0, reps: Number(reps) || 0 });
     }
     setSession(next);
-    setRest(restSec);
+    startRest(restSec);
   }
 
   function addExercise(name: string) {
@@ -186,7 +217,7 @@ export function WorkoutPage() {
     if (!session) return;
     if (!sessionHasLoggedSets(session.exercises)) {
       setSession(null);
-      setRest(0);
+      clearRest();
       setHoldRunning(false);
       showToast("No sets logged");
       return;
@@ -201,7 +232,7 @@ export function WorkoutPage() {
       exercises: session.exercises.filter((exercise) => exercise.sets.length > 0),
     });
     setSession(null);
-    setRest(0);
+    clearRest();
     setHoldRunning(false);
     showToast("Workout saved");
   }
@@ -220,7 +251,7 @@ export function WorkoutPage() {
             className="w-full"
             onClick={() => {
               setSession(null);
-              setRest(0);
+              clearRest();
               setHoldRunning(false);
             }}
           />
@@ -245,7 +276,7 @@ export function WorkoutPage() {
               <p className="font-mono text-3xl">{rest}s</p>
             </div>
             <div className="mt-3 flex gap-2">
-              <button type="button" className="flex-1 rounded-2xl bg-ink py-2 text-sm" onClick={() => setRest(0)}>
+              <button type="button" className="flex-1 rounded-2xl bg-ink py-2 text-sm" onClick={clearRest}>
                 Skip
               </button>
               <button type="button" className="flex-1 rounded-2xl bg-ink py-2 text-sm" onClick={() => setRest((value) => value + 15)}>
@@ -259,7 +290,7 @@ export function WorkoutPage() {
                   type="button"
                   onClick={() => {
                     updateProfile({ restSec: seconds });
-                    setRest(seconds);
+                    startRest(seconds);
                   }}
                   className={`shrink-0 rounded-full px-3 py-1.5 text-sm ${
                     restSec === seconds ? "bg-lift text-ink" : "bg-ink text-fog"
@@ -370,6 +401,7 @@ export function WorkoutPage() {
                     className="rounded-2xl bg-lift py-3 font-semibold text-ink disabled:opacity-40"
                     disabled={holdRunning}
                     onClick={() => {
+                      void unlockTimerSound();
                       setHoldRemaining(holdTarget);
                       setHoldRunning(true);
                     }}
