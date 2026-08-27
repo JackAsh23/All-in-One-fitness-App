@@ -115,6 +115,11 @@ export function ActivityMap({
 
     if (follow) {
       map.setView([center.lat, center.lng], Math.max(map.getZoom(), 15), { animate: true });
+    } else if (drawMode) {
+      const next = L.latLng(center.lat, center.lng);
+      if (!map.getBounds().contains(next)) {
+        map.panTo(next, { animate: true });
+      }
     } else if (route.length > 1) {
       map.fitBounds(L.latLngBounds(route.map((p) => L.latLng(p.lat, p.lng))), { padding: [28, 28] });
     }
