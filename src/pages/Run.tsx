@@ -4,6 +4,7 @@ import { Footprints, MapPinned, Navigation, PersonStanding } from "lucide-react"
 import { ActivityMap } from "../components/ActivityMap";
 import { BackButton } from "../components/BackButton";
 import { Card } from "../components/Heatmap";
+import { Fullscreen } from "../components/Fullscreen";
 import { Sheet } from "../components/Sheet";
 import { formatSourceLabel } from "../lib/integrations";
 import { addDays, formatDuration, formatPace, formatShortDate, nowTime, todayISO, uid } from "../lib/dates";
@@ -225,7 +226,8 @@ export function RunPage() {
     const accent = kind === "walk" ? "bg-step text-ink" : "bg-run text-ink";
     const finishLabel = kind === "walk" ? "Finish walk" : "Finish run";
     return (
-      <div className="fixed inset-0 z-50 bg-ink animate-pop">
+      <Fullscreen>
+      <div className="fixed inset-0 z-[70] bg-ink">
         <div className="mx-auto flex h-dvh max-w-[430px] flex-col">
           <div className="relative min-h-0 flex-1">
             <ActivityMap
@@ -291,12 +293,14 @@ export function RunPage() {
           </div>
         </div>
       </div>
+      </Fullscreen>
     );
   }
 
   if (phase === "plan") {
     return (
-      <div className="fixed inset-0 z-50 bg-ink animate-pop">
+      <Fullscreen>
+      <div className="fixed inset-0 z-[70] bg-ink">
         <div className="mx-auto flex h-dvh max-w-[430px] flex-col">
           <div className="relative h-[62%]">
             <ActivityMap
@@ -365,6 +369,7 @@ export function RunPage() {
           </div>
         </div>
       </div>
+      </Fullscreen>
     );
   }
 

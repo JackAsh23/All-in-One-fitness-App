@@ -46,7 +46,7 @@ export function AppShell() {
           </NavLink>
         </header>
         <main className="relative min-w-0 flex-1 overflow-x-hidden overflow-y-auto px-4 pb-28">
-          <div key={path} className="animate-pop">
+          <div key={path} className="animate-page">
             <Outlet />
           </div>
         </main>
