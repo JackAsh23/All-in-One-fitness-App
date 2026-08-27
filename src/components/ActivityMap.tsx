@@ -29,6 +29,15 @@ function waypointIcon(index: number, total: number) {
   });
 }
 
+function locationIcon() {
+  return L.divIcon({
+    className: "user-location",
+    html: `<div class="user-location-halo"></div><div class="user-location-dot"></div>`,
+    iconSize: [44, 44],
+    iconAnchor: [22, 22],
+  });
+}
+
 export function ActivityMap({
   center,
   path = [],
@@ -45,7 +54,7 @@ export function ActivityMap({
   const mapRef = useRef<L.Map | null>(null);
   const pathRef = useRef<L.Polyline | null>(null);
   const routeRef = useRef<L.Polyline | null>(null);
-  const markerRef = useRef<L.CircleMarker | null>(null);
+  const markerRef = useRef<L.Marker | null>(null);
   const dotsRef = useRef<L.LayerGroup | null>(null);
   const onAddRef = useRef(onAddPoint);
   const onMoveRef = useRef(onMoveWaypoint);
@@ -81,12 +90,11 @@ export function ActivityMap({
       opacity: 0.85,
     }).addTo(map);
 
-    markerRef.current = L.circleMarker([center.lat, center.lng], {
-      radius: 8,
-      color: "#07090c",
-      weight: 3,
-      fillColor: "#3ee07f",
-      fillOpacity: 1,
+    markerRef.current = L.marker([center.lat, center.lng], {
+      icon: locationIcon(),
+      interactive: false,
+      keyboard: false,
+      zIndexOffset: 400,
     }).addTo(map);
 
     dotsRef.current = L.layerGroup().addTo(map);
@@ -121,52 +129,45 @@ export function ActivityMap({
     pathRef.current?.setLatLngs(path.map((p) => L.latLng(p.lat, p.lng)));
     routeRef.current?.setLatLngs(route.map((p) => L.latLng(p.lat, p.lng)));
     markerRef.current?.setLatLng([center.lat, center.lng]);
-    if (drawMode) {
-      markerRef.current?.setStyle({ opacity: 0, fillOpacity: 0 });
-    } else {
-      markerRef.current?.setStyle({ opacity: 1, fillOpacity: 1 });
-    }
-
-    dotsRef.current?.clearLayers();
-    if (drawMode) {
-      waypoints.forEach((point, index) => {
-        let suppressClick = false;
-        const marker = L.marker([point.lat, point.lng], {
-          icon: waypointIcon(index, waypoints.length),
-          draggable: true,
-          autoPan: true,
-          bubblingMouseEvents: false,
-          keyboard: false,
-          zIndexOffset: 1000,
-        });
-        marker.on("click", (event) => {
-          L.DomEvent.stopPropagation(event);
-          if (suppressClick) {
-            suppressClick = false;
-            return;
-          }
-          onDeleteRef.current?.(index);
-        });
-        marker.on("dragend", (event) => {
-          suppressClick = true;
-          const ll = event.target.getLatLng();
-          onMoveRef.current?.(index, { lat: ll.lat, lng: ll.lng });
-        });
-        marker.addTo(dotsRef.current!);
-      });
-    }
 
     if (follow) {
       map.setView([center.lat, center.lng], Math.max(map.getZoom(), 15), { animate: true });
-    } else if (drawMode) {
-      const next = L.latLng(center.lat, center.lng);
-      if (!map.getBounds().contains(next)) {
-        map.panTo(next, { animate: true });
-      }
-    } else if (route.length > 1) {
+    } else if (!drawMode && route.length > 1) {
       map.fitBounds(L.latLngBounds(route.map((p) => L.latLng(p.lat, p.lng))), { padding: [28, 28] });
     }
-  }, [center, path, route, waypoints, follow, drawMode]);
+  }, [center, path, route, follow, drawMode]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !dotsRef.current) return;
+    dotsRef.current.clearLayers();
+    if (!drawMode) return;
+    waypoints.forEach((point, index) => {
+      let suppressClick = false;
+      const marker = L.marker([point.lat, point.lng], {
+        icon: waypointIcon(index, waypoints.length),
+        draggable: true,
+        autoPan: true,
+        bubblingMouseEvents: false,
+        keyboard: false,
+        zIndexOffset: 1000,
+      });
+      marker.on("click", (event) => {
+        L.DomEvent.stopPropagation(event);
+        if (suppressClick) {
+          suppressClick = false;
+          return;
+        }
+        onDeleteRef.current?.(index);
+      });
+      marker.on("dragend", (event) => {
+        suppressClick = true;
+        const ll = event.target.getLatLng();
+        onMoveRef.current?.(index, { lat: ll.lat, lng: ll.lng });
+      });
+      marker.addTo(dotsRef.current!);
+    });
+  }, [waypoints, drawMode]);
 
   return <div ref={wrapRef} className={`overflow-hidden rounded-3xl ${className}`} />;
 }

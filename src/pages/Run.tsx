@@ -70,6 +70,12 @@ export function RunPage() {
     };
   }, []);
 
+  useEffect(() => {
+    if (phase === "live" || phase === "plan") return;
+    watchOff.current?.();
+    watchOff.current = null;
+  }, [phase]);
+
   const liveKm = pathDistanceKm(path);
   const liveCals = kcalForDistance(liveKm, kind);
   const plannedKm = selectedRoute?.distanceKm ?? 0;
@@ -105,6 +111,8 @@ export function RunPage() {
         pausedRef.current = false;
         setPaused(false);
         startWatch(point);
+      } else if (next === "plan") {
+        startWatch(point, { locateOnly: true });
       }
       setPhase(next);
     } catch (error) {
@@ -119,12 +127,13 @@ export function RunPage() {
     void unlockGps("live", "run");
   }, []);
 
-  function startWatch(origin: GeoPoint) {
+  function startWatch(origin: GeoPoint, options?: { locateOnly?: boolean }) {
     watchOff.current?.();
     let last = origin;
+    const locateOnly = options?.locateOnly === true;
     watchOff.current = watchGps((point, accuracyM) => {
       setCenter(point);
-      if (pausedRef.current) {
+      if (locateOnly || pausedRef.current) {
         last = point;
         return;
       }
@@ -415,7 +424,7 @@ export function RunPage() {
               />
             </div>
           </div>
-          <div className="-mt-6 flex-1 rounded-t-3xl bg-ink px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-5">
+          <div className="flex-1 rounded-t-3xl border-t border-line bg-ink px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-5">
             <p className="text-sm font-semibold uppercase tracking-[0.12em] text-snow">
               Tap the map to drop pins
             </p>

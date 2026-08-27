@@ -229,7 +229,8 @@ textarea::placeholder {
   .sheet-panel,
   .sheet-panel.is-leaving,
   .toast-pop,
-  .toast-pop.is-leaving {
+  .toast-pop.is-leaving,
+  .user-location-halo {
     animation: none !important;
   }
 
@@ -279,4 +280,43 @@ textarea::placeholder {
 
 .leaflet-marker-dragging .waypoint-pin-inner {
   transform: scale(1.12);
+}
+
+.user-location {
+  background: none !important;
+  border: none !important;
+  pointer-events: none;
+}
+
+.user-location-dot {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 1;
+  width: 16px;
+  height: 16px;
+  margin: -8px 0 0 -8px;
+  border-radius: 999px;
+  background: #2a93ee;
+  border: 3px solid #f4f7fa;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
+}
+
+.user-location-halo {
+  position: absolute;
+  inset: 2px;
+  border-radius: 999px;
+  background: rgba(42, 147, 238, 0.32);
+  animation: location-pulse 2.2s ease-out infinite;
+}
+
+@keyframes location-pulse {
+  0% {
+    transform: scale(0.55);
+    opacity: 0.75;
+  }
+  100% {
+    transform: scale(1.4);
+    opacity: 0;
+  }
 }
