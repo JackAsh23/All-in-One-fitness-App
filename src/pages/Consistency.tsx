@@ -57,15 +57,15 @@ export function ConsistencyPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-end justify-between">
-        <div>
-          <p className="text-xs uppercase tracking-[0.18em] text-life">Phase 6</p>
+      <div>
+        <p className="text-xs uppercase tracking-[0.18em] text-life">Phase 6</p>
+        <div className="flex items-center justify-between gap-3">
           <h2 className="text-2xl font-semibold">Consistency OS</h2>
+          <Link to="/wrapped" className="flex shrink-0 items-center gap-1 text-sm leading-none text-life">
+            <Sparkles size={14} />
+            Wrapped
+          </Link>
         </div>
-        <Link to="/wrapped" className="flex items-center gap-1 text-sm text-life">
-          <Sparkles size={14} />
-          Wrapped
-        </Link>
       </div>
 
       {!hasHistory ? (
@@ -89,14 +89,14 @@ export function ConsistencyPage() {
       ) : null}
 
       <Card className="border-life/30 bg-gradient-to-br from-life/10 to-card">
-        <div className="mb-3 flex items-end justify-between">
-          <div>
+        <div className="mb-3">
+          <div className="flex items-center justify-between gap-3">
             <p className="text-xs uppercase tracking-[0.18em] text-fog">Consistency board</p>
-            <p className="text-sm font-medium">{scoreGrade(selectedDay.score)}</p>
+            <p className="shrink-0 text-xs leading-none text-fog">
+              {streak} day streak · {streakLabel(streak)}
+            </p>
           </div>
-          <p className="text-xs text-fog">
-            {streak} day streak · {streakLabel(streak)}
-          </p>
+          <p className="mt-1 text-sm font-medium">{scoreGrade(selectedDay.score)}</p>
         </div>
         <ConsistencyBoard
           days={selectedWeek}
@@ -109,7 +109,7 @@ export function ConsistencyPage() {
       <Card>
         <h3 className="mb-2 font-semibold">Goal mode</h3>
         <p className="mb-3 text-xs text-fog">{activeMode.emoji} {activeMode.blurb}</p>
-        <div className="flex gap-2 overflow-x-auto no-scrollbar">
+        <div className="flex flex-wrap gap-2">
           {GOAL_MODES.map((mode) => (
             <button
               key={mode.id}

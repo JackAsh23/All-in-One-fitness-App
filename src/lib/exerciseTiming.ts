@@ -1,6 +1,8 @@
 const TIMED_NAME =
   /\b(plank|side plank|wall[- ]?sit|dead hang|dead-hang|hollow(?: body)?(?: hold)?|superman hold|static hold|isometric|glute bridge hold)\b/i;
 
+export type LiftUnit = "reps" | "time";
+
 export function parseTimedTarget(targetReps?: string): number | null {
   if (!targetReps) return null;
   const match = targetReps.trim().match(/^(\d+(?:\.\d+)?)\s*s$/i);
@@ -12,6 +14,36 @@ export function parseTimedTarget(targetReps?: string): number | null {
 export function isTimedExercise(name: string, targetReps?: string): boolean {
   if (parseTimedTarget(targetReps) != null) return true;
   return TIMED_NAME.test(name);
+}
+
+/** Unit from the saved string only — Farmer Carry "60" stays reps until the user picks Time. */
+export function liftTargetNumber(target?: string, fallback = 10): number {
+  const timed = parseTimedTarget(target);
+  if (timed != null) return timed;
+  const n = Number.parseInt((target ?? "").trim(), 10);
+  if (Number.isFinite(n) && n > 0) return Math.round(n);
+  return fallback;
+}
+
+export function parseLiftQuantity(target?: string): { unit: LiftUnit; value: number } {
+  const timed = parseTimedTarget(target);
+  if (timed != null) return { unit: "time", value: timed };
+  return { unit: "reps", value: liftTargetNumber(target, 10) };
+}
+
+export function formatLiftTarget(unit: LiftUnit, value: number | string): string {
+  const n = typeof value === "string" ? Number.parseInt(value.trim(), 10) : value;
+  const safe = Number.isFinite(n) && n > 0 ? Math.round(n) : unit === "time" ? 45 : 10;
+  return unit === "time" ? `${safe}s` : String(safe);
+}
+
+export function exerciseLogUnit(exercise: {
+  name: string;
+  targetReps?: string;
+  targetUnit?: LiftUnit;
+}): LiftUnit {
+  if (exercise.targetUnit === "reps" || exercise.targetUnit === "time") return exercise.targetUnit;
+  return isTimedExercise(exercise.name, exercise.targetReps) ? "time" : "reps";
 }
 
 export function formatWorkoutSet(set: { kg: number; reps: number; durationSec?: number }): string {

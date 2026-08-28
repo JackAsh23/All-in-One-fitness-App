@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Sheet } from "./Sheet";
+import { LiftUnitSelect } from "./LiftUnitSelect";
 import { WEEKDAYS, type PlanDay, type TrainingPlan } from "../lib/trainingPlans";
 import { uid } from "../lib/dates";
+import { formatLiftTarget, parseLiftQuantity, type LiftUnit } from "../lib/exerciseTiming";
 
 type DraftExercise = { name: string; sets: string; reps: string };
 type DraftDay = { weekday: number; title: string; focus: string; exercises: DraftExercise[] };
@@ -15,17 +17,49 @@ function emptyDay(weekday: number, label: string): DraftDay {
   };
 }
 
+function planToDraft(plan: TrainingPlan): DraftDay[] {
+  return plan.days.map((day) => ({
+    weekday: day.weekday,
+    title: day.title,
+    focus: day.focus,
+    exercises:
+      day.exercises.length > 0
+        ? day.exercises.map((exercise) => ({
+            name: exercise.name,
+            sets: String(exercise.sets),
+            reps: exercise.reps,
+          }))
+        : [{ name: "", sets: "3", reps: "10" }],
+  }));
+}
+
 export function CustomPlanSheet({
   open,
   onClose,
   onSave,
+  editing,
 }: {
   open: boolean;
   onClose: () => void;
   onSave: (plan: TrainingPlan) => void;
+  editing?: TrainingPlan | null;
 }) {
   const [name, setName] = useState("My split");
   const [days, setDays] = useState<DraftDay[]>([]);
+  const [editId, setEditId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    if (editing) {
+      setName(editing.name);
+      setEditId(editing.id);
+      setDays(planToDraft(editing));
+      return;
+    }
+    setName("My split");
+    setEditId(null);
+    setDays([]);
+  }, [open, editing]);
 
   function toggleDay(weekday: number, label: string) {
     setDays((current) => {
@@ -52,6 +86,11 @@ export function CustomPlanSheet({
     );
   }
 
+  function setExerciseUnit(weekday: number, index: number, unit: LiftUnit, currentReps: string) {
+    const qty = parseLiftQuantity(currentReps);
+    patchExercise(weekday, index, { reps: formatLiftTarget(unit, qty.value) });
+  }
+
   function save() {
     const built: PlanDay[] = days
       .map((day) => {
@@ -63,17 +102,20 @@ export function CustomPlanSheet({
           focus: day.focus.trim() || "Custom",
           exercises: day.exercises
             .filter((item) => item.name.trim())
-            .map((item) => ({
-              name: item.name.trim(),
-              sets: Math.max(1, Number(item.sets) || 3),
-              reps: item.reps.trim() || "10",
-            })),
+            .map((item) => {
+              const qty = parseLiftQuantity(item.reps);
+              return {
+                name: item.name.trim(),
+                sets: Math.max(1, Number(item.sets) || 3),
+                reps: formatLiftTarget(qty.unit, qty.value),
+              };
+            }),
         };
       })
       .filter((day) => day.exercises.length > 0);
     if (!built.length) return;
     onSave({
-      id: uid("plan"),
+      id: editId ?? uid("plan"),
       name: name.trim() || "Custom plan",
       blurb: "Your custom weekly split.",
       daysPerWeek: built.length,
@@ -82,11 +124,12 @@ export function CustomPlanSheet({
     });
     setName("My split");
     setDays([]);
+    setEditId(null);
     onClose();
   }
 
   return (
-    <Sheet open={open} title="Custom training plan" onClose={onClose}>
+    <Sheet open={open} title={editId ? "Edit training plan" : "Custom training plan"} onClose={onClose}>
       <div className="space-y-3">
         <label className="block text-sm text-fog">
           Plan name
@@ -123,32 +166,55 @@ export function CustomPlanSheet({
               <input
                 value={day.title}
                 onChange={(event) => patchDay(day.weekday, { title: event.target.value })}
-                className="mb-2 w-full rounded-2xl border border-line bg-ink px-3 py-2 text-sm text-snow"
+                className="mb-2 w-full rounded-xl border border-line bg-ink px-2 py-2 text-sm text-snow"
                 placeholder="Session title"
               />
-              {day.exercises.map((exercise, index) => (
-                <div key={index} className="mb-2 grid grid-cols-[1fr_3rem_3.5rem] gap-1">
-                  <input
-                    value={exercise.name}
-                    onChange={(event) => patchExercise(day.weekday, index, { name: event.target.value })}
-                    className="rounded-xl border border-line bg-ink px-2 py-2 text-sm text-snow"
-                    placeholder="Exercise"
-                  />
-                  <input
-                    value={exercise.sets}
-                    onChange={(event) => patchExercise(day.weekday, index, { sets: event.target.value })}
-                    className="rounded-xl border border-line bg-ink px-2 py-2 text-center text-sm text-snow"
-                    placeholder="3"
-                    inputMode="numeric"
-                  />
-                  <input
-                    value={exercise.reps}
-                    onChange={(event) => patchExercise(day.weekday, index, { reps: event.target.value })}
-                    className="rounded-xl border border-line bg-ink px-2 py-2 text-center text-sm text-snow"
-                    placeholder="10 or 45s"
-                  />
-                </div>
-              ))}
+              <div className="mb-1 grid grid-cols-[minmax(0,1fr)_2.6rem_3.1rem_4.6rem] items-center gap-1.5 text-[10px] uppercase tracking-wide text-fog">
+                <span>Exercise</span>
+                <span className="text-center">Sets</span>
+                <span className="text-center">Qty</span>
+                <span className="text-center">Unit</span>
+              </div>
+              {day.exercises.map((exercise, index) => {
+                const qty = parseLiftQuantity(exercise.reps);
+                return (
+                  <div key={index} className="mb-2 grid grid-cols-[minmax(0,1fr)_2.6rem_3.1rem_4.6rem] items-center gap-1.5">
+                    <input
+                      value={exercise.name}
+                      onChange={(event) => patchExercise(day.weekday, index, { name: event.target.value })}
+                      className="min-w-0 rounded-xl border border-line bg-ink px-2 py-2 text-sm text-snow"
+                      placeholder="Exercise"
+                    />
+                    <input
+                      value={exercise.sets}
+                      onChange={(event) => patchExercise(day.weekday, index, { sets: event.target.value })}
+                      className="rounded-xl border border-line bg-ink px-1 py-2 text-center text-sm text-snow"
+                      placeholder="3"
+                      inputMode="numeric"
+                      aria-label="Sets"
+                    />
+                    <input
+                      value={String(qty.value)}
+                      onChange={(event) => {
+                        const raw = event.target.value.replace(/[^\d]/g, "");
+                        patchExercise(day.weekday, index, {
+                          reps: formatLiftTarget(qty.unit, raw || (qty.unit === "time" ? 45 : 10)),
+                        });
+                      }}
+                      className="rounded-xl border border-line bg-ink px-1 py-2 text-center text-sm text-snow"
+                      placeholder={qty.unit === "time" ? "60" : "10"}
+                      inputMode="numeric"
+                      aria-label={qty.unit === "time" ? "Seconds" : "Reps"}
+                    />
+                    <LiftUnitSelect
+                      compact
+                      value={qty.unit}
+                      testId={`plan-unit-${day.weekday}-${index}`}
+                      onChange={(unit) => setExerciseUnit(day.weekday, index, unit, exercise.reps)}
+                    />
+                  </div>
+                );
+              })}
               <button
                 type="button"
                 className="text-sm text-lift"

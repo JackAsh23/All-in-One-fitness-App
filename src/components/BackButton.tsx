@@ -42,7 +42,12 @@ export function BackButton({
       aria-label={label}
     >
       <ChevronLeft size={iconOnly ? 18 : 22} strokeWidth={2.75} />
-      {iconOnly ? null : <span>{label}</span>}
+      {iconOnly ? null : (
+        <>
+          <span>{label}</span>
+          <span className="inline-block w-[22px] shrink-0" aria-hidden />
+        </>
+      )}
     </button>
   );
 }

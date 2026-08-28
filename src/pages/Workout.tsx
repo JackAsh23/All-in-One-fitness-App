@@ -10,10 +10,21 @@ import { EXERCISE_CATALOG, TEMPLATES } from "../lib/exercises";
 import { formatShortDate, nowTime, todayISO, uid, weekdayIndex } from "../lib/dates";
 import { addWorkout, removeCustomPlan, removeWorkout, saveCustomPlan, setTrainingPlan, updateProfile, useAppState } from "../lib/store";
 import { TRAINING_PLANS, resolvePlan, type PlanDay, type TrainingPlan } from "../lib/trainingPlans";
-import { formatWorkoutSet, isTimedExercise, mergeLiftChoice, parseTimedTarget, sessionHasLoggedSets, HOLD_SEC_CHOICES, REP_CHOICES } from "../lib/exerciseTiming";
+import {
+  exerciseLogUnit,
+  formatLiftTarget,
+  formatWorkoutSet,
+  liftTargetNumber,
+  mergeLiftChoice,
+  sessionHasLoggedSets,
+  HOLD_SEC_CHOICES,
+  REP_CHOICES,
+  type LiftUnit,
+} from "../lib/exerciseTiming";
 import { playTimerDone, unlockTimerSound } from "../lib/timerSound";
 import { showToast } from "../lib/toast";
 import { CustomPlanSheet } from "../components/CustomPlanSheet";
+import { LiftUnitSelect } from "../components/LiftUnitSelect";
 import type { WorkoutExercise } from "../lib/types";
 
 const REST_CHOICES = [30, 45, 60, 90, 120, 180];
@@ -37,6 +48,7 @@ export function WorkoutPage() {
   const [activeExercise, setActiveExercise] = useState(0);
   const [planOpen, setPlanOpen] = useState(true);
   const [planBuilderOpen, setPlanBuilderOpen] = useState(false);
+  const [editingPlan, setEditingPlan] = useState<TrainingPlan | null>(null);
   const restSec = state.profile.restSec ?? 90;
   const customPlans = state.customPlans ?? [];
   const plan = resolvePlan(state.trainingPlanId, customPlans);
@@ -120,15 +132,34 @@ export function WorkoutPage() {
   function syncInputsFor(exercise?: WorkoutExercise) {
     setHoldRunning(false);
     if (!exercise) return;
-    const timed = isTimedExercise(exercise.name, exercise.targetReps);
-    const target = parseTimedTarget(exercise.targetReps);
+    const timed = exerciseLogUnit(exercise) === "time";
     if (timed) {
-      const seconds = target ?? 45;
+      const seconds = liftTargetNumber(exercise.targetReps, 45);
       setHoldSec(String(seconds));
       setHoldRemaining(seconds);
-    } else if (exercise.targetReps) {
-      const n = Number.parseInt(exercise.targetReps, 10);
-      if (Number.isFinite(n) && parseTimedTarget(exercise.targetReps) == null) setReps(String(n));
+    } else {
+      setReps(String(liftTargetNumber(exercise.targetReps, 10)));
+    }
+  }
+
+  function applyLogUnit(unit: LiftUnit) {
+    if (!session) return;
+    const current = session.exercises[activeExercise];
+    if (!current) return;
+    const n = liftTargetNumber(current.targetReps, unit === "time" ? 45 : 10);
+    const next = structuredClone(session);
+    next.exercises[activeExercise] = {
+      ...current,
+      targetReps: formatLiftTarget(unit, n),
+      targetUnit: unit,
+    };
+    setSession(next);
+    setHoldRunning(false);
+    if (unit === "time") {
+      setHoldSec(String(n));
+      setHoldRemaining(n);
+    } else {
+      setReps(String(n));
     }
   }
 
@@ -191,7 +222,7 @@ export function WorkoutPage() {
     const next = structuredClone(session);
     const exercise = next.exercises[activeExercise];
     if (!exercise) return;
-    const timed = isTimedExercise(exercise.name, exercise.targetReps);
+    const timed = exerciseLogUnit(exercise) === "time";
     if (timed) {
       const seconds = holdRemaining < holdTarget ? holdTarget - holdRemaining : holdTarget;
       if (!seconds) return;
@@ -336,11 +367,14 @@ export function WorkoutPage() {
           <Card>
             <div className="mb-3 flex gap-3">
               <ExerciseArt name={current.name} size={96} />
-              <div>
+              <div className="min-w-0 flex-1">
                 <h3 className="font-semibold">{current.name}</h3>
                 {current.targetSets ? (
                   <p className="mt-1 text-sm text-lift">
-                    Prescription: {current.targetSets} × {current.targetReps}
+                    Prescription: {current.targetSets} ×{" "}
+                    {exerciseLogUnit(current) === "time"
+                      ? formatLiftTarget("time", liftTargetNumber(current.targetReps, 45))
+                      : current.targetReps}
                   </p>
                 ) : (
                   <p className="mt-1 text-sm text-fog">Tap the image to cycle poses.</p>
@@ -351,6 +385,15 @@ export function WorkoutPage() {
                 </p>
               </div>
             </div>
+            <label className="mb-4 block text-sm text-fog">
+              Log as
+              <LiftUnitSelect
+                className="mt-1"
+                value={exerciseLogUnit(current)}
+                testId="log-unit"
+                onChange={applyLogUnit}
+              />
+            </label>
             {current.sets.length === 0 ? (
               <p className="mb-3 text-sm text-fog">No sets yet. Log the first one.</p>
             ) : (
@@ -365,7 +408,7 @@ export function WorkoutPage() {
                 ))}
               </ul>
             )}
-            {isTimedExercise(current.name, current.targetReps) ? (
+            {exerciseLogUnit(current) === "time" ? (
               <div className="flex flex-col gap-6">
                 <div className="rounded-3xl bg-ink px-4 py-6 text-center">
                   <p className="text-xs uppercase tracking-[0.2em] text-lift">
@@ -394,6 +437,18 @@ export function WorkoutPage() {
                   onChange={(value) => {
                     setHoldSec(value);
                     if (!holdRunning) setHoldRemaining(Number(value) || 45);
+                    setSession((currentSession) => {
+                      if (!currentSession) return currentSession;
+                      const exercise = currentSession.exercises[activeExercise];
+                      if (!exercise) return currentSession;
+                      const next = structuredClone(currentSession);
+                      next.exercises[activeExercise] = {
+                        ...exercise,
+                        targetReps: formatLiftTarget("time", Number(value) || 45),
+                        targetUnit: "time",
+                      };
+                      return next;
+                    });
                   }}
                 />
                 <div className="grid grid-cols-2 gap-2">
@@ -545,7 +600,10 @@ export function WorkoutPage() {
               ))}
               <button
                 type="button"
-                onClick={() => setPlanBuilderOpen(true)}
+                onClick={() => {
+                  setEditingPlan(null);
+                  setPlanBuilderOpen(true);
+                }}
                 className="rounded-full border border-lift/40 px-3 py-1.5 text-sm text-lift"
               >
                 + Custom plan
@@ -582,7 +640,10 @@ export function WorkoutPage() {
               ))}
               <button
                 type="button"
-                onClick={() => setPlanBuilderOpen(true)}
+                onClick={() => {
+                  setEditingPlan(null);
+                  setPlanBuilderOpen(true);
+                }}
                 className="shrink-0 rounded-full border border-lift/40 px-3 py-1.5 text-sm text-lift"
               >
                 + Custom
@@ -595,13 +656,25 @@ export function WorkoutPage() {
                 Clear
               </button>
               {plan.custom ? (
-                <button
-                  type="button"
-                  onClick={() => removeCustomPlan(plan.id)}
-                  className="shrink-0 rounded-full px-3 py-1.5 text-sm text-run"
-                >
-                  Delete
-                </button>
+                <>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingPlan(plan);
+                      setPlanBuilderOpen(true);
+                    }}
+                    className="shrink-0 rounded-full px-3 py-1.5 text-sm text-lift"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => removeCustomPlan(plan.id)}
+                    className="shrink-0 rounded-full px-3 py-1.5 text-sm text-run"
+                  >
+                    Delete
+                  </button>
+                </>
               ) : null}
             </div>
             <div className="space-y-2">
@@ -713,7 +786,11 @@ export function WorkoutPage() {
       </p>
       <CustomPlanSheet
         open={planBuilderOpen}
-        onClose={() => setPlanBuilderOpen(false)}
+        editing={editingPlan}
+        onClose={() => {
+          setPlanBuilderOpen(false);
+          setEditingPlan(null);
+        }}
         onSave={(plan) => {
           saveCustomPlan(plan);
           showToast("Plan saved");

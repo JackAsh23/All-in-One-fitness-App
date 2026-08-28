@@ -1,5 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { formatWorkoutSet, isTimedExercise, mergeLiftChoice, parseTimedTarget, sessionHasLoggedSets, HOLD_SEC_CHOICES, REP_CHOICES } from "./exerciseTiming";
+import {
+  exerciseLogUnit,
+  formatLiftTarget,
+  formatWorkoutSet,
+  isTimedExercise,
+  liftTargetNumber,
+  mergeLiftChoice,
+  parseLiftQuantity,
+  parseTimedTarget,
+  sessionHasLoggedSets,
+  HOLD_SEC_CHOICES,
+  REP_CHOICES,
+} from "./exerciseTiming";
 
 describe("exerciseTiming", () => {
   it("treats plank and 45s prescriptions as timed holds", () => {
@@ -20,6 +32,24 @@ describe("exerciseTiming", () => {
   it("does not count an empty finish as work", () => {
     expect(sessionHasLoggedSets([{ sets: [] }, { sets: [] }])).toBe(false);
     expect(sessionHasLoggedSets([{ sets: [{ kg: 20, reps: 8 }] }])).toBe(true);
+  });
+
+  it("lets the plan store Farmer Carry 60 as reps until Time is chosen", () => {
+    expect(parseLiftQuantity("60")).toEqual({ unit: "reps", value: 60 });
+    expect(parseLiftQuantity("60s")).toEqual({ unit: "time", value: 60 });
+    expect(parseLiftQuantity("45s")).toEqual({ unit: "time", value: 45 });
+    expect(formatLiftTarget("time", 60)).toBe("60s");
+    expect(formatLiftTarget("reps", 60)).toBe("60");
+    expect(isTimedExercise("Farmer Carry", "60")).toBe(false);
+    expect(isTimedExercise("Farmer Carry", "60s")).toBe(true);
+    expect(exerciseLogUnit({ name: "Farmer Carry", targetReps: "60" })).toBe("reps");
+    expect(exerciseLogUnit({ name: "Farmer Carry", targetReps: "60", targetUnit: "time" })).toBe("time");
+    expect(exerciseLogUnit({ name: "Plank", targetReps: "45s" })).toBe("time");
+    expect(exerciseLogUnit({ name: "Plank", targetReps: "45", targetUnit: "reps" })).toBe("reps");
+    expect(liftTargetNumber("60s", 45)).toBe(60);
+    expect(liftTargetNumber("60", 45)).toBe(60);
+    expect(liftTargetNumber(undefined, 45)).toBe(45);
+    expect(liftTargetNumber(undefined, 10)).toBe(10);
   });
 
   it("keeps an unusual prescription in the lift dropdown", () => {

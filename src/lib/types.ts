@@ -90,6 +90,8 @@ export type WorkoutExercise = {
   sets: WorkoutSet[];
   targetSets?: number;
   targetReps?: string;
+  /** Live-session override so Farmer Carry can log as time even when the plan stored "60". */
+  targetUnit?: "reps" | "time";
 };
 
 export type WorkoutLog = {

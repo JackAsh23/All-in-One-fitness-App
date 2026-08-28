@@ -128,7 +128,7 @@ export function ConsistencyBoard({
 
   return (
     <div className={compact ? "space-y-3" : "space-y-4"}>
-      <div className={`flex items-center ${compact ? "gap-3" : "gap-4"}`}>
+      <div className={`flex items-start ${compact ? "gap-3" : "gap-4"}`}>
         <div className="relative shrink-0" style={{ width: size, height: size }}>
           <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden>
             {pillars.map((pillar, ring) => {
@@ -154,11 +154,13 @@ export function ConsistencyBoard({
           {pillars.map((pillar) => (
             <li key={pillar.key}>
               <div className="flex items-center justify-between gap-2 text-sm">
-                <span className="flex items-center gap-1.5 text-fog">
-                  <pillar.Icon size={14} style={{ color: pillar.color }} />
-                  {pillar.label}
+                <span className="flex items-center gap-1.5 leading-none text-fog">
+                  <span className="grid size-4 shrink-0 place-items-center">
+                    <pillar.Icon size={14} style={{ color: pillar.color }} />
+                  </span>
+                  <span className="leading-none">{pillar.label}</span>
                 </span>
-                <span className="font-mono text-snow">
+                <span className="font-mono leading-none text-snow">
                   {selected.parts[pillar.key]}/{selected.partsMax[pillar.key]}
                 </span>
               </div>
