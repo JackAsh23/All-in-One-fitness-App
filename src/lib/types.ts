@@ -52,6 +52,8 @@ export type SportKind = "run" | "walk";
 export type GeoPoint = {
   lat: number;
   lng: number;
+  t?: number;
+  gap?: boolean;
 };
 
 export type RoutePlan = {

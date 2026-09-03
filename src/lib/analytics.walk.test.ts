@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { runsOnly, walkPersonalRecords, walksOnly, weeklySteps } from "./analytics";
+import { todayISO } from "./dates";
 import type { RunLog } from "./types";
 
 const run: RunLog = {
@@ -34,7 +35,7 @@ describe("walk and step analytics", () => {
   });
 
   it("buckets weekly steps", () => {
-    const weeks = weeklySteps([{ date: "2026-08-26", steps: 8000 }], 1);
+    const weeks = weeklySteps([{ date: todayISO(), steps: 8000 }], 1);
     expect(weeks).toHaveLength(1);
     expect(weeks[0]?.value).toBe(8000);
   });

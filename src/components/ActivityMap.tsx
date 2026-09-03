@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { darkBasemap } from "../lib/mapTiles";
+import { gpsTrackSegments } from "../lib/geo";
 import type { GeoPoint } from "../lib/types";
 
 type Props = {
@@ -52,7 +53,7 @@ export function ActivityMap({
 }: Props) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
-  const pathRef = useRef<L.Polyline | null>(null);
+  const pathRef = useRef<L.LayerGroup | null>(null);
   const routeRef = useRef<L.Polyline | null>(null);
   const markerRef = useRef<L.Marker | null>(null);
   const dotsRef = useRef<L.LayerGroup | null>(null);
@@ -76,12 +77,7 @@ export function ActivityMap({
 
     L.control.zoom({ position: "bottomright" }).addTo(map);
 
-    pathRef.current = L.polyline([], {
-      color: "#ff6b4a",
-      weight: 5,
-      lineCap: "round",
-      lineJoin: "round",
-    }).addTo(map);
+    pathRef.current = L.layerGroup().addTo(map);
 
     routeRef.current = L.polyline([], {
       color: "#7aa6ff",
@@ -126,7 +122,16 @@ export function ActivityMap({
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
-    pathRef.current?.setLatLngs(path.map((p) => L.latLng(p.lat, p.lng)));
+    pathRef.current?.clearLayers();
+    gpsTrackSegments(path).forEach((segment) => {
+      if (segment.points.length < 2 || !pathRef.current) return;
+      L.polyline(
+        segment.points.map((p) => L.latLng(p.lat, p.lng)),
+        segment.kind === "gap"
+          ? { color: "#ff6b4a", weight: 4, dashArray: "7 8", opacity: 0.55, lineCap: "round" }
+          : { color: "#ff6b4a", weight: 5, lineCap: "round", lineJoin: "round" },
+      ).addTo(pathRef.current);
+    });
     routeRef.current?.setLatLngs(route.map((p) => L.latLng(p.lat, p.lng)));
     markerRef.current?.setLatLng([center.lat, center.lng]);
 

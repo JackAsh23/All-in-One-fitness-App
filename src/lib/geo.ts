@@ -62,7 +62,12 @@ export function requestGps(): Promise<GeoPoint> {
       return;
     }
     navigator.geolocation.getCurrentPosition(
-      (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      (pos) =>
+        resolve({
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+          t: pos.timestamp || Date.now(),
+        }),
       (err) => {
         if (err.code === err.PERMISSION_DENIED) {
           reject(new Error("Location permission was denied. Enable GPS to track this session."));
@@ -72,7 +77,7 @@ export function requestGps(): Promise<GeoPoint> {
           reject(new Error("Could not read your location. Check location services and try again."));
         }
       },
-      { enableHighAccuracy: true, timeout: 20000, maximumAge: 5000 },
+      { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 },
     );
   });
 }
@@ -82,27 +87,85 @@ export function watchGps(
   onError?: (message: string) => void,
 ): () => void {
   if (!gpsSupported()) return () => undefined;
-  const id = navigator.geolocation.watchPosition(
-    (pos) => onPoint({ lat: pos.coords.latitude, lng: pos.coords.longitude }, pos.coords.accuracy),
-    (err) => onError?.(err.message || "GPS signal lost"),
-    { enableHighAccuracy: true, maximumAge: 1000, timeout: 20000 },
-  );
-  return () => navigator.geolocation.clearWatch(id);
+  let cleared = false;
+  let id = 0;
+  let restartTimer = 0;
+
+  function start() {
+    if (cleared) return;
+    id = navigator.geolocation.watchPosition(
+      (pos) =>
+        onPoint(
+          {
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude,
+            t: pos.timestamp || Date.now(),
+          },
+          pos.coords.accuracy,
+        ),
+      (err) => {
+        if (cleared) return;
+        if (err.code === err.PERMISSION_DENIED) {
+          onError?.("Location permission was denied. Enable GPS to track this session.");
+          return;
+        }
+        onError?.(err.message || "GPS signal lost — retrying");
+        navigator.geolocation.clearWatch(id);
+        restartTimer = window.setTimeout(start, 1500);
+      },
+      { enableHighAccuracy: true, maximumAge: 1000, timeout: 60000 },
+    );
+  }
+
+  start();
+  return () => {
+    cleared = true;
+    window.clearTimeout(restartTimer);
+    navigator.geolocation.clearWatch(id);
+  };
 }
 
 export function kcalForDistance(km: number, kind: "run" | "walk") {
   return Math.round(km * (kind === "walk" ? 45 : 62));
 }
 
+export const GPS_LOCK_GAP_MS = 12_000;
+
 /** Decide whether a GPS sample should extend the recorded path. */
 export function gpsPathUpdate(
   last: GeoPoint,
   next: GeoPoint,
   accuracyM: number,
-): "ignore" | "append" | "rebase" {
+  nowMs = next.t ?? Date.now(),
+): "ignore" | "append" | "rebase" | "gap" {
   if (accuracyM > 80) return "ignore";
   const meters = haversineKm(last, next) * 1000;
   if (meters < 3) return "ignore";
-  if (meters > 250) return "rebase";
+  const dt = last.t != null ? nowMs - last.t : 0;
+  const frozen = dt >= GPS_LOCK_GAP_MS;
+  if (frozen && meters >= 15) return "gap";
+  if (meters > 250) return frozen ? "gap" : "rebase";
   return "append";
+}
+
+export function stampGpsPoint(point: GeoPoint, extra?: Partial<GeoPoint>): GeoPoint {
+  return { ...point, t: extra?.t ?? point.t ?? Date.now(), ...extra };
+}
+
+export function gpsTrackSegments(path: GeoPoint[]): { kind: "solid" | "gap"; points: GeoPoint[] }[] {
+  if (path.length === 0) return [];
+  const segments: { kind: "solid" | "gap"; points: GeoPoint[] }[] = [];
+  let solid: GeoPoint[] = [path[0]!];
+  for (let i = 1; i < path.length; i += 1) {
+    const point = path[i]!;
+    if (point.gap) {
+      if (solid.length) segments.push({ kind: "solid", points: solid });
+      segments.push({ kind: "gap", points: [solid[solid.length - 1] ?? path[i - 1]!, point] });
+      solid = [point];
+    } else {
+      solid.push(point);
+    }
+  }
+  if (solid.length) segments.push({ kind: "solid", points: solid });
+  return segments;
 }

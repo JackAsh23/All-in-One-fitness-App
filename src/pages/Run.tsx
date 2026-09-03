@@ -8,7 +8,8 @@ import { Fullscreen } from "../components/Fullscreen";
 import { Sheet } from "../components/Sheet";
 import { formatSourceLabel } from "../lib/integrations";
 import { addDays, formatDuration, formatPace, formatShortDate, nowTime, todayISO, uid } from "../lib/dates";
-import { defaultCenter, gpsPathUpdate, kcalForDistance, pathDistanceKm, requestGps, watchGps } from "../lib/geo";
+import { defaultCenter, gpsPathUpdate, kcalForDistance, pathDistanceKm, requestGps, stampGpsPoint, watchGps } from "../lib/geo";
+import { jsWasFrozen, startLiveKeepAwake } from "../lib/liveKeepAwake";
 import { newDraftRoute, presetRoutes } from "../lib/routes";
 import { summarizeDay } from "../lib/scoring";
 import { addRun, removeRoute, removeRun, saveRoute, useAppState } from "../lib/store";
@@ -37,6 +38,7 @@ export function RunPage() {
   const [logOpen, setLogOpen] = useState(false);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
   const [paused, setPaused] = useState(false);
+  const [lockGap, setLockGap] = useState(false);
   const [distance, setDistance] = useState("5.0");
   const [minutes, setMinutes] = useState("32");
   const [seconds, setSeconds] = useState("00");
@@ -50,6 +52,13 @@ export function RunPage() {
   const pathRef = useRef<GeoPoint[]>([]);
   const finishingRef = useRef(false);
   const pausedRef = useRef(false);
+  const locateOnlyRef = useRef(false);
+  const lastPointRef = useRef<GeoPoint | null>(null);
+  const startedAtRef = useRef(0);
+  const pausedMsRef = useRef(0);
+  const pauseStartedRef = useRef(0);
+  const applyGpsPointRef = useRef<(point: GeoPoint, accuracyM: number) => void>(() => undefined);
+  const hiddenAtRef = useRef(0);
   draftRef.current = draft;
   elapsedRef.current = elapsed;
   pathRef.current = path;
@@ -58,10 +67,22 @@ export function RunPage() {
   const allRoutes = [...state.savedRoutes, ...presets.filter((p) => !state.savedRoutes.some((s) => s.id === p.id))];
 
   useEffect(() => {
-    if (phase !== "live" || paused) return;
-    const id = window.setInterval(() => setElapsed((value) => value + 1), 1000);
+    if (phase !== "live") return;
+    startedAtRef.current = Date.now();
+    pausedMsRef.current = 0;
+    pauseStartedRef.current = 0;
+    setElapsed(0);
+    setLockGap(false);
+    let lastBeat = Date.now();
+    const id = window.setInterval(() => {
+      const now = Date.now();
+      if (!pausedRef.current && jsWasFrozen(lastBeat, now)) setLockGap(true);
+      lastBeat = now;
+      const extra = pausedRef.current && pauseStartedRef.current ? now - pauseStartedRef.current : 0;
+      setElapsed(Math.max(0, Math.floor((now - startedAtRef.current - pausedMsRef.current - extra) / 1000)));
+    }, 1000);
     return () => window.clearInterval(id);
-  }, [phase, paused]);
+  }, [phase]);
 
   useEffect(() => {
     return () => {
@@ -127,30 +148,82 @@ export function RunPage() {
     void unlockGps("live", "run");
   }, []);
 
+  function applyGpsPoint(point: GeoPoint, accuracyM: number) {
+    const stamped = stampGpsPoint(point);
+    setCenter(stamped);
+    if (locateOnlyRef.current || pausedRef.current) {
+      lastPointRef.current = stamped;
+      return;
+    }
+    const last = lastPointRef.current;
+    if (!last) {
+      lastPointRef.current = stamped;
+      setPath([stamped]);
+      return;
+    }
+    const action = gpsPathUpdate(last, stamped, accuracyM);
+    if (action === "ignore") return;
+    lastPointRef.current = stamped;
+    if (action === "rebase") return;
+    if (action === "gap") setLockGap(true);
+    setPath((current) => [...current, action === "gap" ? { ...stamped, gap: true } : stamped]);
+  }
+  applyGpsPointRef.current = applyGpsPoint;
+
   function startWatch(origin: GeoPoint, options?: { locateOnly?: boolean }) {
     watchOff.current?.();
-    let last = origin;
-    const locateOnly = options?.locateOnly === true;
+    locateOnlyRef.current = options?.locateOnly === true;
+    lastPointRef.current = stampGpsPoint(origin);
     watchOff.current = watchGps((point, accuracyM) => {
-      setCenter(point);
-      if (locateOnly || pausedRef.current) {
-        last = point;
-        return;
-      }
-      const action = gpsPathUpdate(last, point, accuracyM);
-      if (action === "ignore") return;
-      last = point;
-      if (action === "rebase") return;
-      setPath((current) => [...current, point]);
+      setGpsError(null);
+      applyGpsPointRef.current(point, accuracyM);
     }, (message) => setGpsError(message));
   }
 
+  useEffect(() => {
+    if (phase !== "live") return;
+    const stopKeepAwake = startLiveKeepAwake(kind === "walk" ? "Live walk" : "Live run");
+    function onVisibility() {
+      if (document.visibilityState === "hidden") {
+        hiddenAtRef.current = Date.now();
+        return;
+      }
+      if (!hiddenAtRef.current) return;
+      const away = Date.now() - hiddenAtRef.current;
+      hiddenAtRef.current = 0;
+      if (away < 2000) return;
+      setLockGap(true);
+      void requestGps()
+        .then((point) => {
+          const stamped = stampGpsPoint(point);
+          applyGpsPointRef.current(stamped, 20);
+          startWatch(stamped, { locateOnly: locateOnlyRef.current });
+        })
+        .catch(() => {
+          const last = lastPointRef.current;
+          if (last) startWatch(last, { locateOnly: locateOnlyRef.current });
+        });
+    }
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("pageshow", onVisibility);
+    return () => {
+      stopKeepAwake();
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("pageshow", onVisibility);
+    };
+  }, [phase, kind]);
+
   function pauseLive() {
     pausedRef.current = true;
+    pauseStartedRef.current = Date.now();
     setPaused(true);
   }
 
   function resumeLive() {
+    if (pauseStartedRef.current) {
+      pausedMsRef.current += Date.now() - pauseStartedRef.current;
+      pauseStartedRef.current = 0;
+    }
     pausedRef.current = false;
     setPaused(false);
     setConfirmDiscard(false);
@@ -185,6 +258,7 @@ export function RunPage() {
     setPath([]);
     setGpsError(null);
     setConfirmDiscard(false);
+    setLockGap(false);
     pausedRef.current = false;
     setPaused(false);
   }
@@ -352,12 +426,20 @@ export function RunPage() {
               <p className="mt-2 text-center text-sm text-fog">
                 Timer and distance are frozen. Resume when you start moving again.
               </p>
-            ) : selectedRoute ? (
+            ) : (
               <p className="mt-2 text-center text-sm text-fog">
-                <Navigation size={12} className="mr-1 inline" />
-                {remainingKm.toFixed(2)} km left · finishes and saves at 0
+                {lockGap
+                  ? "GPS paused while the screen was locked. The dashed line is a jump, not the street."
+                  : "Leave the screen on — iPhone stops GPS when you lock it."}
+                {selectedRoute ? (
+                  <>
+                    {" "}
+                    <Navigation size={12} className="mr-1 inline" />
+                    {remainingKm.toFixed(2)} km left · finishes and saves at 0
+                  </>
+                ) : null}
               </p>
-            ) : null}
+            )}
             {gpsError ? <p className="mt-2 text-center text-sm text-run">{gpsError}</p> : null}
             <div className="mt-4 grid grid-cols-2 gap-2">
               <button
